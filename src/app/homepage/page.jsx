@@ -4,17 +4,42 @@ import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import logo from "./assets/logo.png";
-import footer_logo_name from "./assets/footer_logo_name.png";
-import logo_name from "./assets/logo_name.png";
-import main_img from "./assets/main_img1.png";
+import logo from "../assets/logo.png";
+import footer_logo_name from "../assets/footer_logo_name.png";
+import logo_name from "../assets/logo_name.png";
+import main_img from "../assets/main_img1.png";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 export default function Home() {
   const router = useRouter();
 
-  const handleSignup = () => {
-    router.push("/signup");
+  const handleLogout = async () => {
+    try {
+      const res = await fetch("/api/logout", {
+        method: "GET",
+        credentials: "include",
+      }); 
+  
+      if (res.ok) {
+        toast.warning("Successfully logged out", { autoClose: 2000 });
+  
+        // Wait briefly before redirecting to ensure the toast appears
+        setTimeout(() => {
+          router.push("/login");
+        }, 2000);
+      } else {
+        toast.error("Logout failed", { autoClose: 2000 });
+        console.error("Logout failed");
+        
+      }
+    } catch (error) {
+      toast.error("Error in Logout", { autoClose: 2000 });
+      console.error("Error logging out:", error);
+      
+    }
   };
+  
 
   const handleScroll = (e) => {
     e.preventDefault();
@@ -41,9 +66,6 @@ export default function Home() {
       }, 500); // Wait for the first scroll to complete
     }
   };
-  
-  
-  
 
   const TypingEffect = () => {
     const sentences = [
@@ -83,7 +105,6 @@ export default function Home() {
       return () => clearTimeout(timer);
     }, [charIndex, isDeleting, sentenceIndex]);
 
-
     return (
       <div
         className="my-6 text-xs text-gray-700 font-raleway"
@@ -94,6 +115,7 @@ export default function Home() {
           color: "rgb(13, 14, 62)",
         }}
       >
+        
         {displayText.split(" ").map((word, index) => (
           <span
             key={index}
@@ -115,7 +137,9 @@ export default function Home() {
 
   return (
     <div>
+      <ToastContainer position="top-right" />
       <header className="flex justify-between items-center p-3 mt-2">
+      
         <div className="ml-12 mix-blend-overlay flex">
           <Image
             src={logo}
@@ -143,20 +167,20 @@ export default function Home() {
             color: "rgb(13, 14, 62)",
           }}
         >
-          <Link href="/" aria-label="Go to Home Page">
+          <Link href="/homepage" aria-label="Go to Home Page">
             Home
           </Link>
-          <Link href="#" aria-label="Go to About Page" onClick={handleScroll}>
+          <Link href="#" onClick={handleScroll} aria-label="Go to About Page">
             About
           </Link>
           <button
-            onClick={handleSignup}
+            onClick={handleLogout}
             className="bg-black hover:bg-red-600 text-white px-3 py-1 rounded-md"
             aria-label="Logout"
           >
-            SignUp
+            Logout
           </button>
-          <Link href="/signup">
+          <Link href="/owner">
             <button className="bg-white outline text-black px-3 py-1 rounded-md hover:outline-red-600">
               Admin
             </button>
@@ -195,7 +219,7 @@ export default function Home() {
 
             <TypingEffect />
 
-            <Link href="/signup">
+            <Link href="/booking">
               <button className="bg-black hover:bg-red-600 text-white px-3 py-1 rounded-md text-xl mt-4">
                 Book Spot
               </button>
@@ -214,7 +238,7 @@ export default function Home() {
         </div>
       </div>
 
-      <div className="flex justify-center items-center mb-9 mt-36"  id="about-section">
+      <div className="flex justify-center items-center mb-9 mt-36" id="about-section">
         <div className="w-[70%] border-spacing-1 rounded-md px-20 py-11 shadow-md relative">
           {/* Vertical lines inside the box */}
           <div className="flex flex-row my-6">
@@ -385,8 +409,7 @@ export default function Home() {
               href="https://www.google.com/maps/search/?api=1&query=IIIT+Kota+Permanent+Campus,Ranpur,Kota,Rajasthan-325003"
               target="_blank"
               rel="noopener noreferrer"
-              className="hover:text-red-700"
-            >
+              className="hover:text-red-700"            >
               <p className="mt-4 cursor-pointer">IIIT KOTA, Ranpur,</p>
               <p>Kota, Rajasthan-325003</p>
             </Link>
@@ -445,7 +468,7 @@ export default function Home() {
             }}
           >
             <Link
-              href="/"
+              href="/homepage"
               aria-label="Go to Home Page"
               className="mt-4 mb-2 hover:text-red-700"
             >
@@ -460,14 +483,14 @@ export default function Home() {
               About Parkmate
             </Link>
             <Link
-              href="/"
+              href="/contactus"
               aria-label="Go to Home Page"
               className="mb-2 hover:text-red-700"
             >
               Contact Us
             </Link>
             <Link
-              href="/"
+              href="/tems&condtion"
               aria-label="Go to Home Page"
               className="hover:text-red-700"
             >
