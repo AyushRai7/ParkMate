@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -13,7 +13,7 @@ export default function Booking() {
   const [vehicleNumber, setVehicleNumber] = useState("");
   const [vehicleType, setVehicleType] = useState("Car");
   const [timeSlot, setTimeSlot] = useState("10 AM - 12 PM");
-  
+
   const router = useRouter(); // Initialize router
 
   const searchMall = async () => {
@@ -50,7 +50,14 @@ export default function Booking() {
   };
 
   const bookSpot = async () => {
-    if (!placeName || !userName || !phoneNumber || !vehicleNumber || !vehicleType || !timeSlot) {
+    if (
+      !placeName ||
+      !userName ||
+      !phoneNumber ||
+      !vehicleNumber ||
+      !vehicleType ||
+      !timeSlot
+    ) {
       toast.warning("All fields are required.");
       return;
     }
@@ -84,11 +91,15 @@ export default function Booking() {
       if (res.ok) {
         setAvailableSlots(data.remainingSlots);
         setSpotsToBook(data.remainingSlots === 0 ? null : data.remainingSlots + 1);
-        toast.success(`Successfully booked P${spotsToBook}. Remaining spots: ${data.remainingSlots}`);
-
-        // Redirect to homepage after 2 seconds
+        toast.success(
+          `Successfully booked P${spotsToBook}. Remaining spots: ${data.remainingSlots}`,
+          { autoClose: 2000 }
+        );
+      
         setTimeout(() => {
-          router.push("/homepage");
+          router.push(
+            `/invoice?placeName=${placeName}&userName=${userName}&phoneNumber=${phoneNumber}&vehicleNumber=${vehicleNumber}&vehicleType=${vehicleType}&timeSlot=${timeSlot}&spotsBooked=${spotsToBook}`
+          );
         }, 2000);
       } else {
         toast.error(data.message || "An error occurred.");
@@ -109,7 +120,13 @@ export default function Booking() {
             <div className="w-1 h-10 bg-red-600 ml-1 mt-2"></div>
           </div>
           <div className="flex items-center">
-            <h1 className="text-3xl mb-4" style={{ fontFamily: "Raleway, sans-serif", color: "rgb(13, 14, 62)" }}>
+            <h1
+              className="text-3xl mb-4"
+              style={{
+                fontFamily: "Raleway, sans-serif",
+                color: "rgb(13, 14, 62)",
+              }}
+            >
               Book a Parking Spot
             </h1>
           </div>
@@ -134,7 +151,8 @@ export default function Booking() {
         {availableSlots !== null && (
           <div>
             <p className="mb-2">
-              Available Spots: <span className="font-semibold">{availableSlots}</span>
+              Available Spots:{" "}
+              <span className="font-semibold">{availableSlots}</span>
             </p>
 
             <input

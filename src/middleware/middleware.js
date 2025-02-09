@@ -37,5 +37,5 @@ export function middleware(request) {
 }
 
 export const config = {
-  matches: ['/', '/login', '/signup', '/homepage']
+  matches: ['/', '/login', '/signup', '/homepage', '/invoice']
 };

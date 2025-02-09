@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { useRouter } from "next/navigation"; 
+import { useRouter } from "next/navigation";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css"; // Import useRouter for navigation
 
@@ -52,7 +52,13 @@ export default function Admin() {
   return (
     <div className="flex justify-center items-center h-screen">
       <ToastContainer position="top-right" />
-      <div className=" w-[35%] flex flex-col py-7 px-7 shadow-md">
+      <div
+        className=" w-[35%] flex flex-col py-7 px-7 shadow-md"
+        style={{
+          fontFamily: "Raleway, sans-serif",
+          color: "rgb(13, 14, 62)",
+        }}
+      >
         <div className="mb-4 flex">
           <div className="flex flex-row mr-2 mb-2">
             <div className="w-1 h-10 bg-blue-900"></div>
@@ -65,34 +71,31 @@ export default function Admin() {
               color: "rgb(13, 14, 62)",
             }}
           >
-            <h1 className="text-4xl">
-              Add spot
-            </h1>
+            <h1 className="text-4xl">Add spot</h1>
           </div>
         </div>
 
         <div>
-            <input
-              type="text"
-              placeholder="Enter place name"
-              value={placeName}
-              onChange={(e) => setPlaceName(e.target.value)}
-              className="w-full border bg-gray-50 rounded p-2 mb-4"
-            />
-            <input
-              type="number"
-              placeholder="Enter total slots"
-              value={totalSlots}
-              onChange={(e) => setTotalSlots(e.target.value)}
-              className="w-full border bg-gray-50 p-2 rounded"
-            />
+          <input
+            type="text"
+            placeholder="Enter place name"
+            value={placeName}
+            onChange={(e) => setPlaceName(e.target.value)}
+            className="w-full border bg-gray-50 rounded p-2 mb-4"
+          />
+          <input
+            type="number"
+            placeholder="Enter total slots"
+            value={totalSlots}
+            onChange={(e) => setTotalSlots(e.target.value)}
+            className="w-full border bg-gray-50 p-2 rounded"
+          />
 
           <div className="mt-5">
             <button
               onClick={addParking}
               style={{
                 fontFamily: "Raleway, sans-serif",
-
               }}
               className="bg-black hover:bg-red-600 text-white p-2 rounded-md w-full"
             >
