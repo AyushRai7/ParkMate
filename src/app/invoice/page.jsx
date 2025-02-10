@@ -10,7 +10,7 @@ import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import "react-toastify/dist/ReactToastify.css";
 
-import footer_logo_name from "@/assets/footer_logo_name.png"; // Check path
+import footer_logo_name from "../assets/footer_logo_name.png"; // Check path
 
 function InvoiceContent() {
   const [bookingDetails, setBookingDetails] = useState(null);
