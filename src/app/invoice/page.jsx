@@ -1,5 +1,6 @@
 "use client";
 export const dynamic = "force-dynamic";
+export const fetchCache = "force-no-store"; // Ensure fresh data
 
 import { useEffect, useState, useRef, Suspense } from "react";
 import Image from "next/image";
@@ -8,7 +9,8 @@ import { ToastContainer, toast } from "react-toastify";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import "react-toastify/dist/ReactToastify.css";
-import footer_logo_name from "../assets/footer_logo_name.png";
+
+import footer_logo_name from "@/assets/footer_logo_name.png"; // Check path
 
 function InvoiceContent() {
   const [bookingDetails, setBookingDetails] = useState(null);
@@ -17,7 +19,7 @@ function InvoiceContent() {
   const invoiceRef = useRef(null);
 
   useEffect(() => {
-    if (!searchParams) return;
+    if (!searchParams || searchParams.size === 0) return; // Ensure params exist
 
     const params = {
       placeName: searchParams.get("placeName")?.toUpperCase() || "",
@@ -53,9 +55,11 @@ function InvoiceContent() {
 
     toast.success("Invoice downloaded!");
 
-    setTimeout(() => {
+    const timeoutId = setTimeout(() => {
       router.push("/homepage");
     }, 2000);
+
+    return () => clearTimeout(timeoutId); // Cleanup timeout
   };
 
   return (
