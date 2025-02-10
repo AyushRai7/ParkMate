@@ -273,9 +273,9 @@ export default function Home() {
             </h3>
           </div>
 
-          <div className="flex justify-end mt-5">
+          <div className="w-full flex justify-end mt-5">
             <h1
-              className="italic text-xl"
+              className="italic text-xl text-right"
               style={{
                 fontFamily: "Raleway, sans-serif",
                 color: "rgb(13, 14, 62)",
