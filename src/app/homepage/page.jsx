@@ -282,7 +282,7 @@ export default function Home() {
         </div>
       </div>
 
-      <div className="p-5 mt-40 mb-28 flex justify-center items-center">
+      <div className="p-5 mt-40 mb-28 flex justify-center items-center bg-[url('/bg-quote.png')] bg-no-repeat bg-[170px_top]">
         <div className=" w-[60%] flex justify-center items-center flex-col">
           <div>
             <p
@@ -297,9 +297,9 @@ export default function Home() {
             </p>
           </div>
 
-          <div className="flex justify-end mr-0 mt-5 items-center">
+          <div className="w-full flex justify-end mt-5">
             <h1
-              className="italic text-xl"
+              className="italic text-xl text-right"
               style={{
                 fontFamily: "Raleway, sans-serif",
                 color: "rgb(13, 14, 62)",

@@ -258,11 +258,11 @@ export default function Home() {
         </div>
       </div>
 
-      <div className="p-5 mt-40 mb-28 flex justify-center items-center">
+      <div className="p-5 mt-40 mb-28 flex justify-center items-center bg-[url('/bg-quote.png')] bg-no-repeat bg-[170px_top]">
         <div className=" w-[60%] flex justify-center items-center flex-col">
           <div>
-            <p
-              className="text-4xl font-thin italic"
+            <h3
+              className="text-4xl font-mono italic mt-3"
               style={{
                 fontFamily: "Raleway, sans-serif",
                 color: "rgb(13, 14, 62)",
@@ -270,10 +270,10 @@ export default function Home() {
             >
               An average car driver spends upto 19 mins in finding a parking in
               a metro city.
-            </p>
+            </h3>
           </div>
 
-          <div className="flex justify-end mr-0 mt-5 items-center">
+          <div className="flex justify-end mt-5">
             <h1
               className="italic text-xl"
               style={{
