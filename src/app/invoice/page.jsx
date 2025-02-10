@@ -1,22 +1,24 @@
 "use client";
 export const dynamic = "force-dynamic";
-import { useEffect, useState, useRef } from "react";
+
+import { useEffect, useState, useRef, Suspense } from "react";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ToastContainer, toast } from "react-toastify";
 import jsPDF from "jspdf";
-import logo from "../assets/logo.png";
-import footer_logo_name from "../assets/footer_logo_name.png";
 import html2canvas from "html2canvas";
 import "react-toastify/dist/ReactToastify.css";
+import footer_logo_name from "../assets/footer_logo_name.png";
 
-export default function Invoice() {
+function InvoiceContent() {
   const [bookingDetails, setBookingDetails] = useState(null);
   const router = useRouter();
   const searchParams = useSearchParams();
   const invoiceRef = useRef(null);
 
   useEffect(() => {
+    if (!searchParams) return;
+
     const params = {
       placeName: searchParams.get("placeName")?.toUpperCase() || "",
       userName: searchParams.get("userName"),
@@ -32,6 +34,7 @@ export default function Invoice() {
       router.push("/booking");
       return;
     }
+
     setBookingDetails(params);
   }, [searchParams, router]);
 
@@ -44,14 +47,12 @@ export default function Invoice() {
     });
 
     const imgData = canvas.toDataURL("image/png");
-
     const pdf = new jsPDF();
     pdf.addImage(imgData, "PNG", 10, 10, 190, 0);
     pdf.save("Invoice.pdf");
 
     toast.success("Invoice downloaded!");
 
-    // Redirect after 2 seconds
     setTimeout(() => {
       router.push("/homepage");
     }, 2000);
@@ -63,12 +64,8 @@ export default function Invoice() {
       <div
         ref={invoiceRef}
         className="p-6 w-[35%] mx-auto bg-white shadow-md rounded-lg"
-        style={{
-          fontFamily: "Raleway, sans-serif",
-          color: "rgb(13, 14, 62)",
-        }}
+        style={{ fontFamily: "Raleway, sans-serif", color: "rgb(13, 14, 62)" }}
       >
-        {/* Fixed Logo Display */}
         <div className="flex items-center justify-center gap-1 mb-4">
           <Image
             src={footer_logo_name}
@@ -84,29 +81,14 @@ export default function Invoice() {
 
         {bookingDetails ? (
           <div className="text-lg">
-            <p>
-              <strong>Place Name:</strong> {bookingDetails.placeName}
-            </p>
-            <p>
-              <strong>User Name:</strong> {bookingDetails.userName}
-            </p>
-            <p>
-              <strong>Phone Number:</strong> {bookingDetails.phoneNumber}
-            </p>
-            <p>
-              <strong>Vehicle Number:</strong> {bookingDetails.vehicleNumber}
-            </p>
-            <p>
-              <strong>Vehicle Type:</strong> {bookingDetails.vehicleType}
-            </p>
-            <p>
-              <strong>Time Slot:</strong> {bookingDetails.timeSlot}
-            </p>
-            <p>
-              <strong>Spot Number:</strong> P{bookingDetails.spotNumber}
-            </p>
+            <p><strong>Place Name:</strong> {bookingDetails.placeName}</p>
+            <p><strong>User Name:</strong> {bookingDetails.userName}</p>
+            <p><strong>Phone Number:</strong> {bookingDetails.phoneNumber}</p>
+            <p><strong>Vehicle Number:</strong> {bookingDetails.vehicleNumber}</p>
+            <p><strong>Vehicle Type:</strong> {bookingDetails.vehicleType}</p>
+            <p><strong>Time Slot:</strong> {bookingDetails.timeSlot}</p>
+            <p><strong>Spot Number:</strong> P{bookingDetails.spotNumber}</p>
 
-            {/* Exclude Button from PDF */}
             <button
               onClick={downloadInvoice}
               className="w-full bg-black hover:bg-red-600 text-white p-2 rounded mt-4 exclude-from-print"
@@ -119,5 +101,13 @@ export default function Invoice() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function InvoicePage() {
+  return (
+    <Suspense fallback={<p className="text-center text-gray-500">Loading Invoice...</p>}>
+      <InvoiceContent />
+    </Suspense>
   );
 }
