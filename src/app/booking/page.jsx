@@ -16,9 +16,9 @@ export default function Booking() {
 
   const router = useRouter(); // Initialize router
 
-  const searchMall = async () => {
+  const searchvenue = async () => {
     if (!placeName.trim()) {
-      toast.error("Please enter a mall name");
+      toast.error("Please enter a venue name");
       return;
     }
 
@@ -31,14 +31,14 @@ export default function Booking() {
       if (res.ok) {
         setAvailableSlots(data.availableSlots);
         setSpotsToBook(data.totalSlots - data.availableSlots + 1);
-        toast.success("Mall found! Check available spots.");
+        toast.success("Venue found! Check available spots.");
       } else {
-        toast.error(data.message || "Mall not found.");
+        toast.error(data.message || "Venue not found.");
         setAvailableSlots(null);
         setSpotsToBook(1);
       }
     } catch (error) {
-      toast.error("Failed to fetch mall information. Try again.");
+      toast.error("Failed to fetch venue information. Try again.");
       console.error("Error:", error);
     }
   };
@@ -135,16 +135,16 @@ export default function Booking() {
         <div className="mb-4">
           <input
             type="text"
-            placeholder="Enter mall name"
+            placeholder="Enter venue name"
             value={placeName}
             onChange={(e) => setPlaceName(e.target.value)}
             className="w-full p-2 border rounded mb-2"
           />
           <button
-            onClick={searchMall}
+            onClick={searchvenue}
             className="w-full bg-black hover:bg-red-600 text-white p-2 rounded mt-3"
           >
-            Search Mall
+            Search venue
           </button>
         </div>
 
@@ -191,7 +191,6 @@ export default function Booking() {
             >
               <option value="Car">Car</option>
               <option value="Bike">Bike</option>
-              <option value="Truck">Truck</option>
             </select>
             <select
               value={timeSlot}

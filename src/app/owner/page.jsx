@@ -12,7 +12,7 @@ export default function Admin() {
 
   const addParking = async () => {
     if (!placeName || !totalSlots) {
-      setMessage("Mall name and total slots are required.");
+      setMessage("Venue name and total slots are required.");
       return;
     }
 
@@ -78,14 +78,21 @@ export default function Admin() {
         <div>
           <input
             type="text"
-            placeholder="Enter place name"
+            placeholder="Enter venue name"
             value={placeName}
             onChange={(e) => setPlaceName(e.target.value)}
             className="w-full border bg-gray-50 rounded p-2 mb-4"
           />
           <input
             type="number"
-            placeholder="Enter total slots"
+            placeholder="Enter total car slots"
+            value={totalSlots}
+            onChange={(e) => setTotalSlots(e.target.value)}
+            className="w-full border bg-gray-50 p-2 rounded mb-4"
+          />
+          <input
+            type="number"
+            placeholder="Enter total bike slots"
             value={totalSlots}
             onChange={(e) => setTotalSlots(e.target.value)}
             className="w-full border bg-gray-50 p-2 rounded"
