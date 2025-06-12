@@ -283,8 +283,8 @@ export default function Owner() {
                 className="w-full border rounded px-3 py-2"
               >
                 <option value="">All Vehicle</option>
-                <option value="car">Car</option>
-                <option value="bike">Bike</option>
+                <option value="Car">Car</option>
+                <option value="Bike">Bike</option>
               </select>
 
               <select
