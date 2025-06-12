@@ -1,7 +1,6 @@
 import mongoose from 'mongoose'
 import dotenv from "dotenv";
 
-// Load environment variables
 dotenv.config();
 
 const Connection= async ()=>{
@@ -14,4 +13,3 @@ const Connection= async ()=>{
     }
 };
 export default Connection;
-//password: parkingsystem07

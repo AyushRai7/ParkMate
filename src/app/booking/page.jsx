@@ -7,14 +7,43 @@ import "react-toastify/dist/ReactToastify.css";
 export default function Booking() {
   const [placeName, setPlaceName] = useState("");
   const [spotsToBook, setSpotsToBook] = useState(1);
-  const [availableSlots, setAvailableSlots] = useState(null);
+  const [availableSlotsOfCar, setAvailableSlotsOfCar] = useState(null);
+  const [availableSlotsOfBike, setAvailableSlotsOfBike] = useState(null);
+  const [totalCarSlots, setTotalCarSlots] = useState(null);
+  const [totalBikeSlots, setTotalBikeSlots] = useState(null);
   const [userName, setUserName] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [vehicleNumber, setVehicleNumber] = useState("");
   const [vehicleType, setVehicleType] = useState("Car");
   const [timeSlot, setTimeSlot] = useState("10 AM - 12 PM");
 
-  const router = useRouter(); // Initialize router
+  const router = useRouter();
+
+  // useEffect to compute next spot using real total slots
+  useEffect(() => {
+    if (
+      totalCarSlots !== null &&
+      totalBikeSlots !== null &&
+      availableSlotsOfCar !== null &&
+      availableSlotsOfBike !== null
+    ) {
+      if (vehicleType === "Car") {
+        const nextCarSpot = totalCarSlots - availableSlotsOfCar + 1;
+        setSpotsToBook(nextCarSpot > 0 ? nextCarSpot : 1);
+      } else if (vehicleType === "Bike") {
+        const nextBikeSpot = totalBikeSlots - availableSlotsOfBike + 1;
+        setSpotsToBook(nextBikeSpot > 0 ? nextBikeSpot : 1);
+      }
+    } else {
+      setSpotsToBook(1);
+    }
+  }, [
+    vehicleType,
+    totalCarSlots,
+    totalBikeSlots,
+    availableSlotsOfCar,
+    availableSlotsOfBike,
+  ]);
 
   const searchvenue = async () => {
     if (!placeName.trim()) {
@@ -29,12 +58,17 @@ export default function Booking() {
       const data = await res.json();
 
       if (res.ok) {
-        setAvailableSlots(data.availableSlots);
-        setSpotsToBook(data.totalSlots - data.availableSlots + 1);
+        setAvailableSlotsOfCar(data.availableSlotsOfCar);
+        setAvailableSlotsOfBike(data.availableSlotsOfBike);
+        setTotalCarSlots(data.totalSlotsOfCar);
+        setTotalBikeSlots(data.totalSlotsOfBike);
         toast.success("Venue found! Check available spots.");
       } else {
         toast.error(data.message || "Venue not found.");
-        setAvailableSlots(null);
+        setAvailableSlotsOfCar(null);
+        setAvailableSlotsOfBike(null);
+        setTotalCarSlots(null);
+        setTotalBikeSlots(null);
         setSpotsToBook(1);
       }
     } catch (error) {
@@ -67,8 +101,11 @@ export default function Booking() {
       return;
     }
 
-    if (availableSlots < 1) {
-      toast.info("No available spots.");
+    const currentAvailable =
+      vehicleType === "Car" ? availableSlotsOfCar : availableSlotsOfBike;
+
+    if (currentAvailable < 1) {
+      toast.info(`No available ${vehicleType.toLowerCase()} spots.`);
       return;
     }
 
@@ -89,13 +126,17 @@ export default function Booking() {
       const data = await res.json();
 
       if (res.ok) {
-        setAvailableSlots(data.remainingSlots);
-        setSpotsToBook(data.remainingSlots === 0 ? null : data.remainingSlots + 1);
+        if (vehicleType === "Car") {
+          setAvailableSlotsOfCar(data.remainingSlots);
+        } else {
+          setAvailableSlotsOfBike(data.remainingSlots);
+        }
+
         toast.success(
           `Successfully booked P${spotsToBook}. Remaining spots: ${data.remainingSlots}`,
           { autoClose: 2000 }
         );
-      
+
         setTimeout(() => {
           router.push(
             `/invoice?placeName=${placeName}&userName=${userName}&phoneNumber=${phoneNumber}&vehicleNumber=${vehicleNumber}&vehicleType=${vehicleType}&timeSlot=${timeSlot}&spotsBooked=${spotsToBook}`
@@ -107,6 +148,21 @@ export default function Booking() {
     } catch (error) {
       toast.error("Failed to book parking spot. Try again.");
       console.error("Error:", error);
+    }
+  };
+
+  const currentAvailable =
+    vehicleType === "Car" ? availableSlotsOfCar : availableSlotsOfBike;
+
+  const handleFormSubmit = async (e) => {
+    e.preventDefault();
+    if (
+      placeName.trim() &&
+      (availableSlotsOfCar !== null || availableSlotsOfBike !== null)
+    ) {
+      bookSpot();
+    } else {
+      searchvenue();
     }
   };
 
@@ -132,84 +188,87 @@ export default function Booking() {
           </div>
         </div>
 
-        <div className="mb-4">
-          <input
-            type="text"
-            placeholder="Enter venue name"
-            value={placeName}
-            onChange={(e) => setPlaceName(e.target.value)}
-            className="w-full p-2 border rounded mb-2"
-          />
-          <button
-            onClick={searchvenue}
-            className="w-full bg-black hover:bg-red-600 text-white p-2 rounded mt-3"
-          >
-            Search venue
-          </button>
-        </div>
-
-        {availableSlots !== null && (
-          <div>
-            <p className="mb-2">
-              Available Spots:{" "}
-              <span className="font-semibold">{availableSlots}</span>
-            </p>
-
+        <form onSubmit={handleFormSubmit}>
+          <div className="mb-4">
             <input
               type="text"
-              value={`P${spotsToBook}`}
-              readOnly
-              className="w-full p-2 border rounded mb-2 bg-gray-100"
-            />
-
-            <input
-              type="text"
-              placeholder="Your Name"
-              value={userName}
-              onChange={(e) => setUserName(e.target.value)}
+              placeholder="Enter venue name"
+              value={placeName}
+              onChange={(e) => setPlaceName(e.target.value)}
               className="w-full p-2 border rounded mb-2"
             />
-            <input
-              type="text"
-              placeholder="Phone Number"
-              value={phoneNumber}
-              onChange={handlePhoneNumberChange}
-              maxLength="10"
-              className="w-full p-2 border rounded mb-2"
-            />
-            <input
-              type="text"
-              placeholder="Vehicle Number"
-              value={vehicleNumber}
-              onChange={(e) => setVehicleNumber(e.target.value)}
-              className="w-full p-2 border rounded mb-2"
-            />
-            <select
-              value={vehicleType}
-              onChange={(e) => setVehicleType(e.target.value)}
-              className="w-full p-2 border rounded mb-2"
-            >
-              <option value="Car">Car</option>
-              <option value="Bike">Bike</option>
-            </select>
-            <select
-              value={timeSlot}
-              onChange={(e) => setTimeSlot(e.target.value)}
-              className="w-full p-2 border rounded mb-2"
-            >
-              <option value="10 AM - 12 PM">10 AM - 12 PM</option>
-              <option value="12 PM - 2 PM">12 PM - 2 PM</option>
-              <option value="2 PM - 4 PM">2 PM - 4 PM</option>
-              <option value="4 PM - 6 PM">4 PM - 6 PM</option>
-            </select>
             <button
-              onClick={bookSpot}
+              type="button"
+              onClick={searchvenue}
               className="w-full bg-black hover:bg-red-600 text-white p-2 rounded mt-3"
             >
-              Book Spot
+              Search venue
             </button>
           </div>
-        )}
+
+          {currentAvailable !== null && (
+            <div>
+              <p className="mb-2">
+                Available {vehicleType} Spots:{" "}
+                <span className="font-semibold">{currentAvailable}</span>
+              </p>
+
+              <input
+                type="text"
+                value={`P${spotsToBook}`}
+                readOnly
+                className="w-full p-2 border rounded mb-2 bg-gray-100"
+              />
+
+              <input
+                type="text"
+                placeholder="Your Name"
+                value={userName}
+                onChange={(e) => setUserName(e.target.value)}
+                className="w-full p-2 border rounded mb-2"
+              />
+              <input
+                type="text"
+                placeholder="Phone Number"
+                value={phoneNumber}
+                onChange={handlePhoneNumberChange}
+                maxLength="10"
+                className="w-full p-2 border rounded mb-2"
+              />
+              <input
+                type="text"
+                placeholder="Vehicle Number"
+                value={vehicleNumber}
+                onChange={(e) => setVehicleNumber(e.target.value)}
+                className="w-full p-2 border rounded mb-2"
+              />
+              <select
+                value={vehicleType}
+                onChange={(e) => setVehicleType(e.target.value)}
+                className="w-full p-2 border rounded mb-2"
+              >
+                <option value="Car">Car</option>
+                <option value="Bike">Bike</option>
+              </select>
+              <select
+                value={timeSlot}
+                onChange={(e) => setTimeSlot(e.target.value)}
+                className="w-full p-2 border rounded mb-2"
+              >
+                <option value="10 AM - 12 PM">10 AM - 12 PM</option>
+                <option value="12 PM - 2 PM">12 PM - 2 PM</option>
+                <option value="2 PM - 4 PM">2 PM - 4 PM</option>
+                <option value="4 PM - 6 PM">4 PM - 6 PM</option>
+              </select>
+              <button
+                type="submit"
+                className="w-full bg-black hover:bg-red-600 text-white p-2 rounded mt-3"
+              >
+                Book Spot
+              </button>
+            </div>
+          )}
+        </form>
       </div>
     </div>
   );

@@ -7,23 +7,42 @@ const ParkingSchema = new mongoose.Schema({
     unique: true,
     set: (value) => value.toUpperCase(),
   },
-  totalSlots: {
+  totalSlotsOfCar: {
     type: Number,
     required: true,
   },
-  bookedSlots: {
-    type: [Number], // Array of booked slot numbers
+  totalSlotsOfBike: {
+    type: Number,
+    required: true,
+  },
+  bookedSlotsOfCar: {
+    type: [Number],
     default: [],
   },
-  availableSlots: {
+  bookedSlotsOfBike: {
+    type: [Number],
+    default: [],
+  },
+  availableSlotsOfCar: {
     type: Number,
     required: true,
     default: function () {
-      // Set availableSlots to the totalSlots - bookedSlots length on creation
-      return this.totalSlots - this.bookedSlots.length;
+      return this.totalSlotsOfCar - this.bookedSlotsOfCar.length;
     },
+  },
+  availableSlotsOfBike: {
+    type: Number,
+    required: true,
+    default: function () {
+      return this.totalSlotsOfBike - this.bookedSlotsOfBike.length;
+    },
+  },
+  ownerId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Owner",
+    required: true,
   },
 });
 
-const Parking = mongoose.models.Parking || mongoose.model('Parking', ParkingSchema);
+const Parking = mongoose.models.Parking || mongoose.model("Parking", ParkingSchema);
 export default Parking;

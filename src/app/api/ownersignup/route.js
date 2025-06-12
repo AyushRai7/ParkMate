@@ -1,6 +1,6 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import User from "@/model/user.js";
+import Owner from "@/model/owner.js";
 import Connection from "@/database/connection";
 import { serialize } from "cookie";
 
@@ -18,11 +18,11 @@ export const POST = async (req) => {
       );
     }
 
-    const existingUser = await User.findOne({
+    const existingOwner = await Owner.findOne({
       $or: [{ username }, { email }],
     });
 
-    if (existingUser) {
+    if (existingOwner) {
       return new Response(
         JSON.stringify({ message: "Username or Email already in use" }),
         { status: 409 }
@@ -31,7 +31,7 @@ export const POST = async (req) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const newUser = new User({
+    const newOwner = new Owner({
       name,
       username,
       email,
@@ -39,17 +39,18 @@ export const POST = async (req) => {
       phone,
     });
 
-    await newUser.save();
+    await newOwner.save();
 
     const tokenData = {
-      username: newUser.username,
-      id: newUser._id,
+      username: newOwner.username,
+      id: newOwner._id,
     };
+
     const token = jwt.sign(tokenData, process.env.JWT_SECRET_KEY, {
       expiresIn: "1h",
     });
 
-    const cookie = serialize("userToken", token, {
+    const cookie = serialize("ownerToken", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "strict",

@@ -1,5 +1,4 @@
 "use client";
-
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
@@ -8,45 +7,12 @@ import logo from "../assets/logo.png";
 import footer_logo_name from "../assets/footer_logo_name.png";
 import logo_name from "../assets/logo_name.png";
 import main_img from "../assets/main_img1.png";
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
 
 export default function Home() {
   const router = useRouter();
 
-  const handleAdmin = () => {
-  console.log("Cookies:", document.cookie); // Debug
-  const tokenExists = document.cookie.includes("ownerToken");
-  console.log("Token exists?", tokenExists);
-  if (tokenExists) {
-    router.push("/owner");
-  } else {
-    router.push("/ownerlogin");
-  }
-};
-
-
-  const handleLogout = async () => {
-    try {
-      const res = await fetch("/api/logout", {
-        method: "GET",
-        credentials: "include",
-      });
-
-      if (res.ok) {
-        toast.warning("Successfully logged out", { autoClose: 2000 });
-
-        setTimeout(() => {
-          router.push("/login");
-        }, 2000);
-      } else {
-        toast.error("Logout failed", { autoClose: 2000 });
-        console.error("Logout failed");
-      }
-    } catch (error) {
-      toast.error("Error in Logout", { autoClose: 2000 });
-      console.error("Error logging out:", error);
-    }
+  const handleSignup = () => {
+    router.push("/signup");
   };
 
   const handleScroll = (e) => {
@@ -67,7 +33,7 @@ export default function Home() {
         const rect = aboutSection.getBoundingClientRect();
         if (rect.bottom > window.innerHeight) {
           window.scrollTo({
-            top: window.scrollY + rect.bottom - window.innerHeight + 20, // Small extra scroll
+            top: window.scrollY + rect.bottom - window.innerHeight + 20,
             behavior: "smooth",
           });
         }
@@ -144,7 +110,7 @@ export default function Home() {
 
   return (
     <div>
-      <ToastContainer position="top-right" />
+      {/* Header */}
       <header className="flex justify-between items-center p-3 mt-2">
         <div className="ml-12 mix-blend-overlay flex">
           <Image
@@ -173,38 +139,34 @@ export default function Home() {
             color: "rgb(13, 14, 62)",
           }}
         >
-          <Link href="/homepage" aria-label="Go to Home Page">
+          <Link href="/" aria-label="Go to Home Page">
             Home
           </Link>
-          <Link href="#about" onClick={handleScroll} aria-label="Go to About Page">
+          <Link href="#about" aria-label="Go to About Page" onClick={handleScroll}>
             About
           </Link>
           <button
-            onClick={handleLogout}
+            onClick={handleSignup}
             className="bg-black hover:bg-red-600 text-white px-3 py-1 rounded-md"
-            aria-label="Logout"
           >
-            Logout
+            SignUp
           </button>
-          <button
-            className="bg-white outline text-black px-3 py-1 rounded-md hover:outline-red-600"
-            onClick={handleAdmin}
-          >
-            Admin
-          </button>
+          <Link href="/ownersignup">
+            <button className="bg-white outline text-black px-3 py-1 rounded-md hover:outline-red-600">
+              Admin
+            </button>
+          </Link>
         </nav>
       </header>
 
+      {/* Hero Section */}
       <div className="flex justify-between">
         <div className="flex justify-between">
           <div className="flex flex-col mt-32 ml-32 relative">
-            {/* Two vertical lines */}
             <div className="absolute left-[-40px] top-4 flex flex-row">
               <div className="w-1 h-24 bg-blue-900"></div>
               <div className="w-1 h-24 bg-red-600 ml-3 mt-5"></div>
             </div>
-
-            {/* Text Content */}
             <h1
               className="text-7xl mb-3 mt-8"
               style={{
@@ -223,10 +185,8 @@ export default function Home() {
             >
               We <span className="text-red-600">P</span>ark.
             </h1>
-
             <TypingEffect />
-
-            <Link href="/booking">
+            <Link href="/signup">
               <button className="bg-black hover:bg-red-600 text-white px-3 py-1 rounded-md text-xl mt-4">
                 Book Spot
               </button>
@@ -245,26 +205,23 @@ export default function Home() {
         </div>
       </div>
 
+      {/* About Section */}
       <div
         className="flex justify-center items-center mb-9 mt-36"
         id="about-section"
       >
         <div className="w-[70%] border-spacing-1 rounded-md px-20 py-11 shadow-md relative">
-          {/* Vertical lines inside the box */}
           <div className="flex flex-row my-6">
             <div className="flex flex-row">
               <div className="w-1 h-10 bg-blue-900"></div>
               <div className="w-1 h-10 bg-red-600 ml-2 mt-3"></div>
             </div>
-
-            {/* Text Content */}
             <div className="ml-3 mt-2">
               <h1 className="text-4xl mb-6">
                 What's Park<span className="text-red-600">M</span>ate?
               </h1>
             </div>
           </div>
-
           <div>
             <p
               className="text-2xl font-normal"
@@ -292,21 +249,19 @@ export default function Home() {
         </div>
       </div>
 
+      {/* Quote Section */}
       <div className="p-5 mt-40 mb-28 flex justify-center items-center bg-[url('/bg-quote.png')] bg-no-repeat bg-[170px_top]">
-        <div className=" w-[60%] flex justify-center items-center flex-col">
-          <div>
-            <p
-              className="text-4xl font-thin italic"
-              style={{
-                fontFamily: "Raleway, sans-serif",
-                color: "rgb(13, 14, 62)",
-              }}
-            >
-              An average car driver spends upto 19 mins in finding a parking in
-              a metro city.
-            </p>
-          </div>
-
+        <div className="w-[60%] flex justify-center items-center flex-col">
+          <h3
+            className="text-4xl font-mono italic mt-3"
+            style={{
+              fontFamily: "Raleway, sans-serif",
+              color: "rgb(13, 14, 62)",
+            }}
+          >
+            An average car driver spends up to 19 mins in finding a parking in a
+            metro city.
+          </h3>
           <div className="w-full flex justify-end mt-5">
             <h1
               className="italic text-xl text-right"
@@ -321,30 +276,23 @@ export default function Home() {
         </div>
       </div>
 
+      {/* Footer */}
       <div className="flex bg-gray-200 justify-between border-t-4 border-blue-900 w-full p-9">
         <div className="flex flex-col ml-10 mt-2">
           <div className="flex mb-5">
-            <div className="flex justify-center items-center">
-              <Image
-                src={logo}
-                alt="Parking System Logo"
-                className="w-auto h-16 object-contain"
-                priority
-              />
-            </div>
-
-            {/* Footer Logo Name */}
-            <div className="flex justify-center items-center ml-4">
-              <Image
-                src={footer_logo_name}
-                alt="Logo Name"
-                className="w-auto h-12 object-contain"
-                priority
-              />
-            </div>
+            <Image
+              src={logo}
+              alt="Parking System Logo"
+              className="w-auto h-16 object-contain"
+              priority
+            />
+            <Image
+              src={footer_logo_name}
+              alt="Logo Name"
+              className="w-auto h-12 object-contain ml-4"
+              priority
+            />
           </div>
-          {/* Logo */}
-
           <div className="flex justify-between">
             <h4
               className="ml-2"
@@ -361,12 +309,7 @@ export default function Home() {
                 href="https://www.instagram.com/ayush_rai077/"
                 target="_blank"
               >
-                <Image
-                  src="/insta.png"
-                  alt="Description"
-                  width={20}
-                  height={20}
-                />
+                <Image src="/insta.png" alt="Insta" width={20} height={20} />
               </Link>
               <Link
                 href="https://www.linkedin.com/in/ayush-rai-271985291/"
@@ -374,103 +317,68 @@ export default function Home() {
               >
                 <Image
                   src="/linkdin.png"
-                  alt="Description"
+                  alt="LinkedIn"
                   width={20}
                   height={20}
                 />
               </Link>
               <Link href="https://github.com/AyushRai7" target="_blank">
-                <Image
-                  src="/github.png"
-                  alt="Description"
-                  width={20}
-                  height={20}
-                />
+                <Image src="/github.png" alt="GitHub" width={20} height={20} />
               </Link>
             </div>
           </div>
         </div>
 
         <div>
-          <div className="flex items-center">
-            <div className="flex flex-row">
-              <div className="w-1 h-5 bg-red-600"></div>
-            </div>
-            <h3
-              className="ml-2 text-xm font-semibold"
-              style={{
-                fontFamily: "Raleway, sans-serif",
-                color: "rgb(34, 34, 34)",
-              }}
-            >
-              WHERE TO FIND
-            </h3>
-          </div>
+          <h3
+            className="ml-2 text-xm font-semibold"
+            style={{
+              fontFamily: "Raleway, sans-serif",
+              color: "rgb(34, 34, 34)",
+            }}
+          >
+            WHERE TO FIND
+          </h3>
+          <Link
+            href="https://www.google.com/maps/search/?api=1&query=IIIT+Kota+Permanent+Campus,Ranpur,Kota,Rajasthan-325003"
+            target="_blank"
+            className="hover:text-red-700 ml-2"
+          >
+            <p className="mt-4 cursor-pointer">IIIT KOTA, Ranpur,</p>
+            <p>Kota, Rajasthan-325003</p>
+          </Link>
+        </div>
 
-          <div
-            className="ml-2 text-xm"
+        <div>
+          <h3
+            className="ml-2 text-xm font-semibold"
             style={{
               fontFamily: "Nunito Sans, sans-serif",
               color: "rgb(34, 34, 34)",
-              fontWeight: "500",
             }}
           >
-            <Link
-              href="https://www.google.com/maps/search/?api=1&query=IIIT+Kota+Permanent+Campus,Ranpur,Kota,Rajasthan-325003"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hover:text-red-700"
-            >
-              <p className="mt-4 cursor-pointer">IIIT KOTA, Ranpur,</p>
-              <p>Kota, Rajasthan-325003</p>
-            </Link>
-          </div>
-        </div>
-
-        <div>
-          <div className="flex items-center">
-            <div className="flex flex-row">
-              <div className="w-1 h-5 bg-red-700"></div>
-            </div>
-            <h3
-              className="ml-2 text-xm font-semibold"
-              style={{
-                fontFamily: "Nunito Sans, sans-serif",
-                color: "rgb(34, 34, 34)",
-              }}
-            >
-              CONTACT US
-            </h3>
-          </div>
-
-          <div className="ml-2">
-            <p className="mt-4 mb-2 hover:text-red-700 cursor-pointer">
-              +91-9717835155
+            CONTACT US
+          </h3>
+          <p className="mt-4 mb-2 hover:text-red-700 cursor-pointer ml-2">
+            +91-9717835155
+          </p>
+          <Link href="http://mail.google.com">
+            <p className="hover:text-red-700 cursor-pointer ml-2">
+              ayushrai1729@gmail.com
             </p>
-            <Link href="http://mail.google.com">
-              <p className="hover:text-red-700 cursor-pointer">
-                ayushrai1729@gmail.com
-              </p>
-            </Link>
-          </div>
+          </Link>
         </div>
 
         <div>
-          <div className="flex items-center">
-            <div className="flex flex-row">
-              <div className="w-1 h-5 bg-red-700"></div>
-            </div>
-            <h3
-              className="ml-2 text-xm font-semibold"
-              style={{
-                fontFamily: "Nunito Sans, sans-serif",
-                color: "rgb(34, 34, 34)",
-              }}
-            >
-              DISCOVER
-            </h3>
-          </div>
-
+          <h3
+            className="ml-2 text-xm font-semibold"
+            style={{
+              fontFamily: "Nunito Sans, sans-serif",
+              color: "rgb(34, 34, 34)",
+            }}
+          >
+            DISCOVER
+          </h3>
           <div
             className="flex flex-col ml-2 mb-4 mr-8 text-xm"
             style={{
@@ -478,44 +386,29 @@ export default function Home() {
               color: "rgb(34, 34, 34)",
             }}
           >
-            <Link
-              href="/homepage"
-              aria-label="Go to Home Page"
-              className="mt-4 mb-2 hover:text-red-700"
-            >
+            <Link href="/" className="mt-4 mb-2 hover:text-red-700">
               Home
             </Link>
             <Link
-              href="#about"
-              aria-label="Go to Home Page"
+              href="#"
               className="mb-2 hover:text-red-700"
               onClick={handleScroll}
             >
               About Parkmate
             </Link>
-            <Link
-              href="#contactus"
-              aria-label="Go to Home Page"
-              className="mb-2 hover:text-red-700"
-            >
+            <Link href="/" className="mb-2 hover:text-red-700">
               Contact Us
             </Link>
-            <Link
-              href="#termsandcondition"
-              aria-label="Go to Home Page"
-              className="hover:text-red-700"
-            >
+            <Link href="/" className="hover:text-red-700">
               Terms & Conditions
             </Link>
           </div>
         </div>
       </div>
+
       <div
         className="flex justify-center bg-gray-200 text-xm font-medium"
-        style={{
-          fontFamily: "Raleway, sans-serif",
-          color: "rgb(34, 34, 34)",
-        }}
+        style={{ fontFamily: "Raleway, sans-serif", color: "rgb(34, 34, 34)" }}
       >
         All Copyrights Reserved By Parkmate 2024
       </div>

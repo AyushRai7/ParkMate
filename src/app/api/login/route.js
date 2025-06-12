@@ -48,7 +48,7 @@ export const POST = async (NextRequest) => {
 
         // Set the token as an HTTP-only cookie properly
         const response = NextResponse.json({ message: "Login successful", success: true });
-        response.cookies.set("token", token, {
+        response.cookies.set("userToken", token, {
             httpOnly: true,
             secure: process.env.NODE_ENV === "production", // Secure in production
             maxAge: 3600, // 1 hour in seconds

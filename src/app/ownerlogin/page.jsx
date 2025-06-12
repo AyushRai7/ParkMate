@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css"; // Import styles for Toast
+import "react-toastify/dist/ReactToastify.css"; 
 
 export default function Login() {
   const [username, setUsername] = useState("");
@@ -15,11 +15,12 @@ export default function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const response = await fetch("/api/login", {
+    const response = await fetch("/api/ownerlogin", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
+      credentials: "include",
       body: JSON.stringify({ username, password }),
     });
 
@@ -28,7 +29,7 @@ export default function Login() {
     if (response.ok) {
       toast.success("Successfully logged in! 🚀", { autoClose: 2000 });
       setTimeout(() => {
-        router.push("/homepage"); 
+        router.push("/owner"); 
       }, 2000);
     } else {
       toast.error("Incorrect username or password ❌", { autoClose: 3000 });
@@ -38,7 +39,6 @@ export default function Login() {
 
   return (
     <div className="flex justify-center items-center h-screen">
-      {/* Toast Notification Container */}
       <ToastContainer position="top-right" />
 
       <div
@@ -53,7 +53,7 @@ export default function Login() {
             <div className="w-1 h-10 bg-blue-900"></div>
             <div className="w-1 h-10 bg-red-600 ml-1 mt-2"></div>
           </div>
-          <h1 className="pb-3 block text-4xl font-medium ml-2">Log In</h1>
+          <h1 className="pb-3 block text-4xl font-medium ml-2">Admin LogIn</h1>
         </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col pb-2">
@@ -94,7 +94,7 @@ export default function Login() {
         <div className="flex justify-center items-center text-sm mt-3">
           <p>
             Don't have an account?{" "}
-            <Link href="/signup" className="text-red-600 font-semibold">
+            <Link href="/ownersignup" className="text-red-600 font-semibold">
               Signup
             </Link>
           </p>

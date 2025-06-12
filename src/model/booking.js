@@ -14,7 +14,7 @@ const BookingSchema = new mongoose.Schema(
     },
     vehicleType: {
       type: String,
-      enum: ['Car', 'Bike', 'Truck'],
+      enum: ['Car', 'Bike'],
       required: true,
     },
     vehicleNumber: {
@@ -29,6 +29,20 @@ const BookingSchema = new mongoose.Schema(
     slotNumber: {
       type: String,
       required: true,
+    },
+    placeName: {
+      type: String,
+      required: true, 
+      trim: true,
+    },
+    userName: {
+      type: String,
+    },
+    phoneNumber: {
+      type: String,
+    },
+    spotsBooked: {
+      type: Number,
     },
   },
   { timestamps: true }
