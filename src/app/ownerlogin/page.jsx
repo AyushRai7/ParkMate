@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css"; 
+import "react-toastify/dist/ReactToastify.css";
 
 export default function Login() {
   const [username, setUsername] = useState("");
@@ -29,33 +29,38 @@ export default function Login() {
     if (response.ok) {
       toast.success("Successfully logged in! 🚀", { autoClose: 2000 });
       setTimeout(() => {
-        router.push("/owner"); 
+        router.push("/owner");
       }, 2000);
     } else {
       toast.error("Incorrect username or password ❌", { autoClose: 3000 });
-      setError(data.message); 
+      setError(data.message);
     }
   };
 
   return (
-    <div className="flex justify-center items-center h-screen">
+    <div className="flex justify-center items-center h-screen bg-gray-50 px-4">
+      {/* Toast Notification Container */}
       <ToastContainer position="top-right" />
 
       <div
-        className="w-[35%] flex flex-col shadow-md p-6"
+        className="w-[90%] sm:w-[70%] md:w-[50%] lg:w-[35%] flex flex-col shadow-md p-6 rounded-md bg-white"
         style={{
           fontFamily: "Raleway, sans-serif",
           color: "rgb(13, 14, 62)",
         }}
       >
-        <div className="flex">
+        {/* Heading */}
+        <div className="flex items-center mb-4">
           <div className="flex flex-row">
-            <div className="w-1 h-10 bg-blue-900"></div>
-            <div className="w-1 h-10 bg-red-600 ml-1 mt-2"></div>
+            <div className="w-1 h-8 sm:h-10 bg-blue-900"></div>
+            <div className="w-1 h-8 sm:h-10 bg-red-600 ml-1 mt-2"></div>
           </div>
-          <h1 className="pb-3 block text-4xl font-medium ml-2">Admin LogIn</h1>
+          <h1 className="ml-2 text-2xl sm:text-3xl md:text-4xl font-medium">
+            Admin LogIn
+          </h1>
         </div>
 
+        {/* Form */}
         <form onSubmit={handleSubmit} className="flex flex-col pb-2">
           <div className="flex flex-col pb-3">
             <input
@@ -64,7 +69,7 @@ export default function Login() {
               value={username}
               placeholder="Username"
               onChange={(e) => setUsername(e.target.value)}
-              className="border rounded px-4 py-2 mt-2"
+              className="border rounded px-3 sm:px-4 py-2 mt-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
               required
             />
           </div>
@@ -76,21 +81,23 @@ export default function Login() {
               value={password}
               placeholder="Password"
               onChange={(e) => setPassword(e.target.value)}
-              className="border rounded px-4 py-2 mt-2"
+              className="border rounded px-3 sm:px-4 py-2 mt-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
               required
             />
           </div>
 
           <button
             type="submit"
-            className="w-full bg-black hover:bg-red-600 text-white p-2 rounded mt-3"
+            className="w-full bg-black hover:bg-red-600 text-white p-2 rounded mt-3 transition"
           >
             Log In
           </button>
         </form>
 
+        {/* Error */}
         {error && <div className="text-red-500 text-center mt-2">{error}</div>}
 
+        {/* Signup Redirect */}
         <div className="flex justify-center items-center text-sm mt-3">
           <p>
             Don't have an account?{" "}

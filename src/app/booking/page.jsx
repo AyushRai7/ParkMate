@@ -19,7 +19,7 @@ export default function Booking() {
 
   const router = useRouter();
 
-  // useEffect to compute next spot using real total slots
+  // Compute next spot
   useEffect(() => {
     if (
       totalCarSlots !== null &&
@@ -50,7 +50,6 @@ export default function Booking() {
       toast.error("Please enter a venue name");
       return;
     }
-
     try {
       const res = await fetch(
         `/api/parking?placeName=${encodeURIComponent(placeName)}`
@@ -95,7 +94,6 @@ export default function Booking() {
       toast.warning("All fields are required.");
       return;
     }
-
     if (!/^[1-9]\d{9}$/.test(phoneNumber)) {
       toast.error("Invalid phone number.");
       return;
@@ -167,9 +165,9 @@ export default function Booking() {
   };
 
   return (
-    <div className="flex justify-center items-center h-screen">
+    <div className="flex justify-center items-center min-h-screen px-4 bg-gray-50">
       <ToastContainer position="top-right" />
-      <div className="p-6 w-[35%] mx-auto bg-white shadow-md rounded-lg">
+      <div className="p-6 w-full max-w-md bg-white shadow-md rounded-lg">
         <div className="flex">
           <div className="flex flex-row mr-2 mb-2">
             <div className="w-1 h-10 bg-blue-900"></div>
@@ -177,7 +175,7 @@ export default function Booking() {
           </div>
           <div className="flex items-center">
             <h1
-              className="text-3xl mb-4"
+              className="text-2xl sm:text-3xl mb-4"
               style={{
                 fontFamily: "Raleway, sans-serif",
                 color: "rgb(13, 14, 62)",

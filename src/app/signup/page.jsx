@@ -29,105 +29,108 @@ export default function Signup() {
     if (response.ok) {
       toast.success("Successfully created an account! 🚀", { autoClose: 2000 });
       setTimeout(() => {
-        router.push("/homepage"); 
+        router.push("/homepage");
       }, 2000);
     } else {
-      toast.error("Incorrect username or password ❌", { autoClose: 3000 });
-      setError(data.message); 
+      toast.error("Signup failed ❌", { autoClose: 3000 });
+      setError(data.message);
     }
   };
 
   return (
-    <div className="flex justify-center items-center h-screen">
-      <div className="w-[35%] flex flex-col rounded shadow-md p-6">
-        <div className="flex mb-4">
-            <div className="flex flex-row mr-2 mb-2">
-            <div className="w-1 h-10 bg-blue-900"></div>
-            <div className="w-1 h-10 bg-red-600 ml-1 mt-2"></div>
+    <div className="flex justify-center items-center h-screen bg-gray-50 px-4">
+      <div
+        className="w-[90%] sm:w-[70%] md:w-[50%] lg:w-[35%] flex flex-col rounded shadow-md p-6 bg-white"
+        style={{
+          fontFamily: "Raleway, sans-serif",
+          color: "rgb(13, 14, 62)",
+        }}
+      >
+        {/* Title */}
+        <div className="flex mb-6 items-center">
+          <div className="flex flex-row mr-2">
+            <div className="w-1 h-8 sm:h-10 bg-blue-900"></div>
+            <div className="w-1 h-8 sm:h-10 bg-red-600 ml-1 mt-2"></div>
           </div>
-          <div>
-          <h1 className="text-4xl mb-4">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-medium">
             Create Account
           </h1>
-          </div>
-          </div>
+        </div>
 
-          
-          <form onSubmit={handleSubmit} className="flex flex-col pb-2">
-            <div className="flex flex-col">
-              <input
-                type="text"
-                id="name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="w-full border bg-gray-50 rounded p-2 mb-4"
-                placeholder="Full Name"
-                required
-              />
-            </div>
-            <div className="flex flex-col">
-              <input
-                type="text"
-                id="username"
-                value={username}
-                placeholder="Username"
-                onChange={(e) => setUsername(e.target.value)}
-                className="w-full border bg-gray-50 rounded p-2 mb-4"
-                required
-              />
-            </div>
-            <div className="flex flex-col">
-              <input
-                type="email"
-                id="email"
-                value={email}
-                placeholder="Email Address"
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full border bg-gray-50 rounded p-2 mb-4"
-                required
-              />
-            </div>
-            <div className="flex flex-col">
-              <input
-                type="password"
-                id="password"
-                value={password}
-                placeholder="Password"
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full border bg-gray-50 rounded p-2 mb-4"
-                required
-              />
-            </div>
-            <div className="flex flex-col">
-              <input
-                type="telephone"
-                id="phone"
-                value={phone}
-                placeholder="Mobile No."
-                onChange={(e) => setPhoneNo(e.target.value)}
-                className="w-full border bg-gray-50 rounded p-2 mb-4"
-                required
-              />
-            </div>
-            <button
-              type="submit"
-              className="bg-black hover:bg-red-600 text-white p-2 mt-1 rounded-md"
-            >
-              Sign Up
-            </button>
-          </form>
-          {error && (
-            <div className="text-red-500 text-center mt-2">{error}</div>
-          )}
-          <div className="flex justify-center items-center text-sm mt-3">
-            <p>
-              Already have an account?{" "}
-              <Link href="/login" className="text-red-600 font-semibold">
-                Login
-              </Link>
-            </p>
-          </div>
-        
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="flex flex-col">
+          <input
+            type="text"
+            id="name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className="w-full border bg-gray-50 rounded p-2 mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="Full Name"
+            required
+          />
+
+          <input
+            type="text"
+            id="username"
+            value={username}
+            placeholder="Username"
+            onChange={(e) => setUsername(e.target.value)}
+            className="w-full border bg-gray-50 rounded p-2 mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            required
+          />
+
+          <input
+            type="email"
+            id="email"
+            value={email}
+            placeholder="Email Address"
+            onChange={(e) => setEmail(e.target.value)}
+            className="w-full border bg-gray-50 rounded p-2 mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            required
+          />
+
+          <input
+            type="password"
+            id="password"
+            value={password}
+            placeholder="Password"
+            onChange={(e) => setPassword(e.target.value)}
+            className="w-full border bg-gray-50 rounded p-2 mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            required
+          />
+
+          <input
+            type="tel"
+            id="phone"
+            value={phone}
+            placeholder="Mobile No."
+            onChange={(e) => setPhoneNo(e.target.value)}
+            className="w-full border bg-gray-50 rounded p-2 mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            required
+          />
+
+          <button
+            type="submit"
+            className="bg-black hover:bg-red-600 text-white p-2 mt-1 rounded-md transition"
+          >
+            Sign Up
+          </button>
+        </form>
+
+        {/* Error */}
+        {error && (
+          <div className="text-red-500 text-center mt-2">{error}</div>
+        )}
+
+        {/* Login Redirect */}
+        <div className="flex justify-center items-center text-sm mt-3">
+          <p>
+            Already have an account?{" "}
+            <Link href="/login" className="text-red-600 font-semibold">
+              Login
+            </Link>
+          </p>
+        </div>
       </div>
     </div>
   );

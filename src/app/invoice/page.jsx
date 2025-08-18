@@ -9,7 +9,6 @@ import { ToastContainer, toast } from "react-toastify";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import "react-toastify/dist/ReactToastify.css";
-
 import footer_logo_name from "../assets/footer_logo_name.png"; // Check path
 
 function InvoiceContent() {
@@ -20,7 +19,6 @@ function InvoiceContent() {
 
   useEffect(() => {
     if (!searchParams || searchParams.size === 0) return; // Ensure params exist
-
     const params = {
       placeName: searchParams.get("placeName")?.toUpperCase() || "",
       userName: searchParams.get("userName"),
@@ -30,31 +28,25 @@ function InvoiceContent() {
       timeSlot: searchParams.get("timeSlot"),
       spotNumber: searchParams.get("spotsBooked"),
     };
-
     if (Object.values(params).some((val) => !val)) {
       toast.error("Missing booking details.");
       router.push("/booking");
       return;
     }
-
     setBookingDetails(params);
   }, [searchParams, router]);
 
   const downloadInvoice = async () => {
     if (!invoiceRef.current) return;
-
     const canvas = await html2canvas(invoiceRef.current, {
       ignoreElements: (element) =>
         element.classList.contains("exclude-from-print"),
     });
-
     const imgData = canvas.toDataURL("image/png");
     const pdf = new jsPDF();
     pdf.addImage(imgData, "PNG", 10, 10, 190, 0);
     pdf.save("Invoice.pdf");
-
     toast.success("Invoice downloaded!");
-
     const timeoutId = setTimeout(() => {
       router.push("/homepage");
     }, 2000);
@@ -63,11 +55,11 @@ function InvoiceContent() {
   };
 
   return (
-    <div className="flex justify-center items-center h-screen">
+    <div className="flex justify-center items-center min-h-screen px-4 bg-gray-50">
       <ToastContainer position="top-right" />
       <div
         ref={invoiceRef}
-        className="p-6 w-[35%] mx-auto bg-white shadow-md rounded-lg"
+        className="p-6 w-full max-w-md bg-white shadow-md rounded-lg"
         style={{ fontFamily: "Raleway, sans-serif", color: "rgb(13, 14, 62)" }}
       >
         <div className="flex items-center justify-center gap-1 mb-4">
@@ -79,12 +71,12 @@ function InvoiceContent() {
           />
         </div>
 
-        <h1 className="text-3xl mb-6 text-center text-blue-900 font-bold">
+        <h1 className="text-2xl sm:text-3xl mb-6 text-center text-blue-900 font-bold">
           Booking Invoice
         </h1>
 
         {bookingDetails ? (
-          <div className="text-lg">
+          <div className="text-base sm:text-lg">
             <p><strong>Place Name:</strong> {bookingDetails.placeName}</p>
             <p><strong>User Name:</strong> {bookingDetails.userName}</p>
             <p><strong>Phone Number:</strong> {bookingDetails.phoneNumber}</p>
