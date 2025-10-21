@@ -1,67 +1,63 @@
 "use client";
+export const dynamic = "force-dynamic";
+export const fetchCache = "force-no-store";
 
-import { useRef, useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useState, useRef } from "react";
 import Image from "next/image";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ToastContainer, toast } from "react-toastify";
-import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
 import "react-toastify/dist/ReactToastify.css";
 import footer_logo_name from "../assets/footer_logo_name.png";
+import { ArrowLeft } from "lucide-react";
 
-export default function InvoicePage() {
-  const invoiceRef = useRef();
+function InvoiceContent() {
+  const [bookingDetails, setBookingDetails] = useState(null);
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [bookingDetails, setBookingDetails] = useState(null);
+  const invoiceRef = useRef(null);
 
   useEffect(() => {
-    const details = {
-      placeName: searchParams.get("placeName"),
+    if (!searchParams || searchParams.size === 0) return;
+
+    const params = {
+      placeName: searchParams.get("placeName")?.toUpperCase() || "",
       userName: searchParams.get("userName"),
       phoneNumber: searchParams.get("phoneNumber"),
       vehicleNumber: searchParams.get("vehicleNumber"),
       vehicleType: searchParams.get("vehicleType"),
       timeSlot: searchParams.get("timeSlot"),
-      spotsToBook: searchParams.get("spotsBooked"),
+      spotNumber: searchParams.get("spotsBooked"),
     };
-    setBookingDetails(details);
-  }, [searchParams]);
+
+    if (Object.values(params).some((val) => !val)) {
+      toast.error("Missing booking details.");
+      router.push("/booking");
+      return;
+    }
+
+    setBookingDetails(params);
+  }, [searchParams, router]);
 
   const downloadInvoice = async () => {
-    try {
-      const element = invoiceRef.current;
-      const canvas = await html2canvas(element);
-      const imgData = canvas.toDataURL("image/png");
-      const pdf = new jsPDF("p", "mm", "a4");
-      const imgWidth = 190;
-      const pageHeight = pdf.internal.pageSize.height;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      let heightLeft = imgHeight;
-      let position = 10;
+    if (!invoiceRef.current) return;
 
-      pdf.addImage(imgData, "PNG", 10, position, imgWidth, imgHeight);
-      heightLeft -= pageHeight;
+    const canvas = await html2canvas(invoiceRef.current, {
+      ignoreElements: (el) => el.classList.contains("exclude-from-print"),
+    });
+    const imgData = canvas.toDataURL("image/png");
+    const pdf = new jsPDF();
+    pdf.addImage(imgData, "PNG", 10, 10, 190, 0);
+    pdf.save("Invoice.pdf");
 
-      while (heightLeft >= 0) {
-        position = heightLeft - imgHeight;
-        pdf.addPage();
-        pdf.addImage(imgData, "PNG", 10, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight;
-      }
-
-      pdf.save("invoice.pdf");
-      toast.success("Invoice downloaded successfully!");
-    } catch (error) {
-      toast.error("Error downloading invoice!");
-      console.error(error);
-    }
+    toast.success("Invoice downloaded!");
+    setTimeout(() => router.push("/homepage"), 2000);
   };
 
   return (
-    <div className="flex flex-col justify-center items-center min-h-screen px-4 bg-gray-50">
+    <div className="flex justify-center items-center min-h-screen px-4 bg-gray-50">
       <ToastContainer position="top-right" />
-
       <div
         ref={invoiceRef}
         className="p-6 w-full max-w-md bg-white shadow-md rounded-lg"
@@ -82,27 +78,13 @@ export default function InvoicePage() {
 
         {bookingDetails ? (
           <div className="text-base sm:text-lg">
-            <p>
-              <strong>Place Name:</strong> {bookingDetails.placeName}
-            </p>
-            <p>
-              <strong>User Name:</strong> {bookingDetails.userName}
-            </p>
-            <p>
-              <strong>Phone Number:</strong> {bookingDetails.phoneNumber}
-            </p>
-            <p>
-              <strong>Vehicle Number:</strong> {bookingDetails.vehicleNumber}
-            </p>
-            <p>
-              <strong>Vehicle Type:</strong> {bookingDetails.vehicleType}
-            </p>
-            <p>
-              <strong>Time Slot:</strong> {bookingDetails.timeSlot}
-            </p>
-            <p>
-              <strong>Spot Number:</strong> P{bookingDetails.spotsToBook}
-            </p>
+            <p><strong>Place Name:</strong> {bookingDetails.placeName}</p>
+            <p><strong>User Name:</strong> {bookingDetails.userName}</p>
+            <p><strong>Phone Number:</strong> {bookingDetails.phoneNumber}</p>
+            <p><strong>Vehicle Number:</strong> {bookingDetails.vehicleNumber}</p>
+            <p><strong>Vehicle Type:</strong> {bookingDetails.vehicleType}</p>
+            <p><strong>Time Slot:</strong> {bookingDetails.timeSlot}</p>
+            <p><strong>Spot Number:</strong> P{bookingDetails.spotNumber}</p>
 
             <button
               onClick={downloadInvoice}
@@ -112,20 +94,26 @@ export default function InvoicePage() {
             </button>
           </div>
         ) : (
-          <p className="text-center text-red-600">
-            Loading booking details...
-          </p>
+          <p className="text-center text-red-600">Loading booking details...</p>
         )}
       </div>
 
-      <div className="flex justify-center mt-6 exclude-from-print">
-        <button
-          onClick={() => router.push("/homepage")}
-          className="text-blue-700 hover:text-blue-900 font-medium flex items-center gap-1"
-        >
-          <span className="text-lg">←</span> Back to Home
-        </button>
-      </div>
+      {/* Back to home link */}
+      <button
+        onClick={() => router.push("/homepage")}
+        className="fixed top-6 left-6 flex items-center gap-2 text-blue-600 hover:text-blue-800 font-medium"
+      >
+        <ArrowLeft size={18} />
+        Back to Home
+      </button>
     </div>
+  );
+}
+
+export default function InvoicePage() {
+  return (
+    <Suspense fallback={<p className="text-center text-gray-500 mt-10">Loading Invoice...</p>}>
+      <InvoiceContent />
+    </Suspense>
   );
 }
