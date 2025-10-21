@@ -9,31 +9,30 @@ Connection();
 export const POST = async (req) => {
   try {
     const body = await req.json();
-    const { name, username, email, password, phone } = body;
+    const { name, email, password, phone } = body;
 
-    if (!name || !username || !email || !password || !phone) {
+    if (!name || !email || !password || !phone) {
       return new Response(
         JSON.stringify({ message: "All fields are required" }),
         { status: 400 }
       );
     }
 
-    const existingUser = await User.findOne({
-      $or: [{ username }, { email }],
-    });
-
+    // Check if user already exists
+    const existingUser = await User.findOne({ email });
     if (existingUser) {
       return new Response(
-        JSON.stringify({ message: "Username or Email already in use" }),
+        JSON.stringify({ message: "Email already in use" }),
         { status: 409 }
       );
     }
 
+    // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // Save user
     const newUser = new User({
       name,
-      username,
       email,
       password: hashedPassword,
       phone,
@@ -41,14 +40,13 @@ export const POST = async (req) => {
 
     await newUser.save();
 
-    const tokenData = {
-      username: newUser.username,
-      id: newUser._id,
-    };
+    // Generate JWT
+    const tokenData = { id: newUser._id, email: newUser.email };
     const token = jwt.sign(tokenData, process.env.JWT_SECRET_KEY, {
       expiresIn: "1h",
     });
 
+    // Store token in HTTP-only cookie
     const cookie = serialize("userToken", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
@@ -58,7 +56,7 @@ export const POST = async (req) => {
     });
 
     return new Response(
-      JSON.stringify({ message: "Signup successful" }),
+      JSON.stringify({ message: "Signup successful", success: true }),
       {
         status: 201,
         headers: {

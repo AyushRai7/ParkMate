@@ -13,7 +13,7 @@ export async function GET(req) {
 
     if (!placeName) {
       return NextResponse.json(
-        { message: "Venue name is required" },
+        { message: "Venue userName is required" },
         { status: 400 }
       );
     }

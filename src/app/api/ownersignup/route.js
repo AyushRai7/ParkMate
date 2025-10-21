@@ -9,31 +9,32 @@ Connection();
 export const POST = async (req) => {
   try {
     const body = await req.json();
-    const { name, username, email, password, phone } = body;
+    const { name, email, password, phone } = body;
 
-    if (!name || !username || !email || !password || !phone) {
+    // Validate required fields
+    if (!name || !email || !password || !phone) {
       return new Response(
         JSON.stringify({ message: "All fields are required" }),
         { status: 400 }
       );
     }
 
-    const existingOwner = await Owner.findOne({
-      $or: [{ username }, { email }],
-    });
+    // Check if email already exists
+    const existingOwner = await Owner.findOne({ email });
 
     if (existingOwner) {
       return new Response(
-        JSON.stringify({ message: "Username or Email already in use" }),
+        JSON.stringify({ message: "Email already in use" }),
         { status: 409 }
       );
     }
 
+    // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // Create new owner
     const newOwner = new Owner({
       name,
-      username,
       email,
       password: hashedPassword,
       phone,
@@ -41,9 +42,10 @@ export const POST = async (req) => {
 
     await newOwner.save();
 
+    // Create JWT token
     const tokenData = {
-      username: newOwner.username,
       id: newOwner._id,
+      email: newOwner.email,
     };
 
     const token = jwt.sign(tokenData, process.env.JWT_SECRET_KEY, {

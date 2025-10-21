@@ -19,7 +19,6 @@ export default function Booking() {
 
   const router = useRouter();
 
-  // Compute next spot
   useEffect(() => {
     if (
       totalCarSlots !== null &&
@@ -30,7 +29,7 @@ export default function Booking() {
       if (vehicleType === "Car") {
         const nextCarSpot = totalCarSlots - availableSlotsOfCar + 1;
         setSpotsToBook(nextCarSpot > 0 ? nextCarSpot : 1);
-      } else if (vehicleType === "Bike") {
+      } else {
         const nextBikeSpot = totalBikeSlots - availableSlotsOfBike + 1;
         setSpotsToBook(nextBikeSpot > 0 ? nextBikeSpot : 1);
       }
@@ -45,7 +44,7 @@ export default function Booking() {
     availableSlotsOfBike,
   ]);
 
-  const searchvenue = async () => {
+  const searchVenue = async () => {
     if (!placeName.trim()) {
       toast.error("Please enter a venue name");
       return;
@@ -72,7 +71,7 @@ export default function Booking() {
       }
     } catch (error) {
       toast.error("Failed to fetch venue information. Try again.");
-      console.error("Error:", error);
+      console.error(error);
     }
   };
 
@@ -82,7 +81,7 @@ export default function Booking() {
     setPhoneNumber(value);
   };
 
-  const bookSpot = async () => {
+  const handleBookingAndPayment = async () => {
     if (
       !placeName ||
       !userName ||
@@ -107,6 +106,8 @@ export default function Booking() {
       return;
     }
 
+    const amount = vehicleType === "Car" ? 100 : 50;
+
     try {
       const res = await fetch(`/api/parking`, {
         method: "POST",
@@ -123,29 +124,40 @@ export default function Booking() {
 
       const data = await res.json();
 
-      if (res.ok) {
-        if (vehicleType === "Car") {
-          setAvailableSlotsOfCar(data.remainingSlots);
-        } else {
-          setAvailableSlotsOfBike(data.remainingSlots);
-        }
-
-        toast.success(
-          `Successfully booked P${spotsToBook}. Remaining spots: ${data.remainingSlots}`,
-          { autoClose: 2000 }
-        );
-
-        setTimeout(() => {
-          router.push(
-            `/invoice?placeName=${placeName}&userName=${userName}&phoneNumber=${phoneNumber}&vehicleNumber=${vehicleNumber}&vehicleType=${vehicleType}&timeSlot=${timeSlot}&spotsBooked=${spotsToBook}`
-          );
-        }, 2000);
-      } else {
-        toast.error(data.message || "An error occurred.");
+      if (!res.ok) {
+        toast.error(data.message || "Booking failed");
+        return;
       }
+
+      if (vehicleType === "Car") setAvailableSlotsOfCar(data.remainingSlots);
+      else setAvailableSlotsOfBike(data.remainingSlots);
+
+      toast.success(`Spot P${spotsToBook} booked! Proceed to payment...`, {
+        autoClose: 2000,
+      });
+
+      const queryParams = {
+        placeName,
+        userName,
+        phoneNumber,
+        vehicleNumber,
+        vehicleType,
+        timeSlot,
+        spotsBooked: spotsToBook,
+      };
+
+      const paymentRes = await fetch("/api/payment", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ amount, params: queryParams }),
+      });
+
+      const paymentData = await paymentRes.json();
+      if (paymentData.url) window.location.href = paymentData.url;
+      else toast.error("Failed to start payment process");
     } catch (error) {
-      toast.error("Failed to book parking spot. Try again.");
-      console.error("Error:", error);
+      toast.error("Something went wrong. Try again.");
+      console.error(error);
     }
   };
 
@@ -154,13 +166,10 @@ export default function Booking() {
 
   const handleFormSubmit = async (e) => {
     e.preventDefault();
-    if (
-      placeName.trim() &&
-      (availableSlotsOfCar !== null || availableSlotsOfBike !== null)
-    ) {
-      bookSpot();
+    if (placeName.trim() && (availableSlotsOfCar !== null || availableSlotsOfBike !== null)) {
+      handleBookingAndPayment();
     } else {
-      searchvenue();
+      searchVenue();
     }
   };
 
@@ -168,45 +177,32 @@ export default function Booking() {
     <div className="flex justify-center items-center min-h-screen px-4 bg-gray-50">
       <ToastContainer position="top-right" />
       <div className="p-6 w-full max-w-md bg-white shadow-md rounded-lg">
-        <div className="flex">
-          <div className="flex flex-row mr-2 mb-2">
-            <div className="w-1 h-10 bg-blue-900"></div>
-            <div className="w-1 h-10 bg-red-600 ml-1 mt-2"></div>
-          </div>
-          <div className="flex items-center">
-            <h1
-              className="text-2xl sm:text-3xl mb-4"
-              style={{
-                fontFamily: "Raleway, sans-serif",
-                color: "rgb(13, 14, 62)",
-              }}
-            >
-              Book a Parking Spot
-            </h1>
-          </div>
-        </div>
+        <h1 className="text-2xl sm:text-3xl font-bold mb-6 text-center">
+          Book a Parking Spot
+        </h1>
 
-        <form onSubmit={handleFormSubmit}>
-          <div className="mb-4">
+        <form onSubmit={handleFormSubmit} className="space-y-4">
+          {/* Venue input */}
+          <div>
             <input
               type="text"
               placeholder="Enter venue name"
               value={placeName}
               onChange={(e) => setPlaceName(e.target.value)}
-              className="w-full p-2 border rounded mb-2"
+              className="w-full border rounded-md px-3 py-2 focus:ring-2 focus:ring-black outline-none"
             />
             <button
               type="button"
-              onClick={searchvenue}
-              className="w-full bg-black hover:bg-red-600 text-white p-2 rounded mt-3"
+              onClick={searchVenue}
+              className="w-full bg-black hover:bg-red-600 text-white py-2 rounded-md mt-2 transition"
             >
-              Search venue
+              Search Venue
             </button>
           </div>
 
           {currentAvailable !== null && (
-            <div>
-              <p className="mb-2">
+            <>
+              <p className="text-gray-700">
                 Available {vehicleType} Spots:{" "}
                 <span className="font-semibold">{currentAvailable}</span>
               </p>
@@ -215,7 +211,7 @@ export default function Booking() {
                 type="text"
                 value={`P${spotsToBook}`}
                 readOnly
-                className="w-full p-2 border rounded mb-2 bg-gray-100"
+                className="w-full border rounded-md px-3 py-2 bg-gray-100"
               />
 
               <input
@@ -223,48 +219,60 @@ export default function Booking() {
                 placeholder="Your Name"
                 value={userName}
                 onChange={(e) => setUserName(e.target.value)}
-                className="w-full p-2 border rounded mb-2"
+                className="w-full border rounded-md px-3 py-2"
               />
+
               <input
                 type="text"
                 placeholder="Phone Number"
                 value={phoneNumber}
                 onChange={handlePhoneNumberChange}
                 maxLength="10"
-                className="w-full p-2 border rounded mb-2"
+                className="w-full border rounded-md px-3 py-2"
               />
+
               <input
                 type="text"
                 placeholder="Vehicle Number"
                 value={vehicleNumber}
                 onChange={(e) => setVehicleNumber(e.target.value)}
-                className="w-full p-2 border rounded mb-2"
+                className="w-full border rounded-md px-3 py-2"
               />
+
               <select
                 value={vehicleType}
                 onChange={(e) => setVehicleType(e.target.value)}
-                className="w-full p-2 border rounded mb-2"
+                className="w-full border rounded-md px-3 py-2"
               >
                 <option value="Car">Car</option>
                 <option value="Bike">Bike</option>
               </select>
+
               <select
                 value={timeSlot}
                 onChange={(e) => setTimeSlot(e.target.value)}
-                className="w-full p-2 border rounded mb-2"
+                className="w-full border rounded-md px-3 py-2"
               >
                 <option value="10 AM - 12 PM">10 AM - 12 PM</option>
                 <option value="12 PM - 2 PM">12 PM - 2 PM</option>
                 <option value="2 PM - 4 PM">2 PM - 4 PM</option>
                 <option value="4 PM - 6 PM">4 PM - 6 PM</option>
               </select>
+
+              <p className="text-sm text-gray-600">
+                Fare:{" "}
+                <span className="font-semibold text-black">
+                  ₹{vehicleType === "Car" ? 100 : 50}
+                </span>
+              </p>
+
               <button
                 type="submit"
-                className="w-full bg-black hover:bg-red-600 text-white p-2 rounded mt-3"
+                className="w-full bg-black hover:bg-red-600 text-white py-2 rounded-md transition"
               >
-                Book Spot
+                Book & Pay
               </button>
-            </div>
+            </>
           )}
         </form>
       </div>

@@ -1,62 +1,67 @@
 "use client";
-export const dynamic = "force-dynamic";
-export const fetchCache = "force-no-store"; // Ensure fresh data
 
-import { useEffect, useState, useRef, Suspense } from "react";
-import Image from "next/image";
+import { useRef, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Image from "next/image";
 import { ToastContainer, toast } from "react-toastify";
-import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
 import "react-toastify/dist/ReactToastify.css";
-import footer_logo_name from "../assets/footer_logo_name.png"; // Check path
+import footer_logo_name from "../assets/footer_logo_name.png";
 
-function InvoiceContent() {
-  const [bookingDetails, setBookingDetails] = useState(null);
+export default function InvoicePage() {
+  const invoiceRef = useRef();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const invoiceRef = useRef(null);
+  const [bookingDetails, setBookingDetails] = useState(null);
 
   useEffect(() => {
-    if (!searchParams || searchParams.size === 0) return; // Ensure params exist
-    const params = {
-      placeName: searchParams.get("placeName")?.toUpperCase() || "",
+    const details = {
+      placeName: searchParams.get("placeName"),
       userName: searchParams.get("userName"),
       phoneNumber: searchParams.get("phoneNumber"),
       vehicleNumber: searchParams.get("vehicleNumber"),
       vehicleType: searchParams.get("vehicleType"),
       timeSlot: searchParams.get("timeSlot"),
-      spotNumber: searchParams.get("spotsBooked"),
+      spotsToBook: searchParams.get("spotsBooked"),
     };
-    if (Object.values(params).some((val) => !val)) {
-      toast.error("Missing booking details.");
-      router.push("/booking");
-      return;
-    }
-    setBookingDetails(params);
-  }, [searchParams, router]);
+    setBookingDetails(details);
+  }, [searchParams]);
 
   const downloadInvoice = async () => {
-    if (!invoiceRef.current) return;
-    const canvas = await html2canvas(invoiceRef.current, {
-      ignoreElements: (element) =>
-        element.classList.contains("exclude-from-print"),
-    });
-    const imgData = canvas.toDataURL("image/png");
-    const pdf = new jsPDF();
-    pdf.addImage(imgData, "PNG", 10, 10, 190, 0);
-    pdf.save("Invoice.pdf");
-    toast.success("Invoice downloaded!");
-    const timeoutId = setTimeout(() => {
-      router.push("/homepage");
-    }, 2000);
+    try {
+      const element = invoiceRef.current;
+      const canvas = await html2canvas(element);
+      const imgData = canvas.toDataURL("image/png");
+      const pdf = new jsPDF("p", "mm", "a4");
+      const imgWidth = 190;
+      const pageHeight = pdf.internal.pageSize.height;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      let heightLeft = imgHeight;
+      let position = 10;
 
-    return () => clearTimeout(timeoutId); // Cleanup timeout
+      pdf.addImage(imgData, "PNG", 10, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+
+      while (heightLeft >= 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, "PNG", 10, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+      }
+
+      pdf.save("invoice.pdf");
+      toast.success("Invoice downloaded successfully!");
+    } catch (error) {
+      toast.error("Error downloading invoice!");
+      console.error(error);
+    }
   };
 
   return (
-    <div className="flex justify-center items-center min-h-screen px-4 bg-gray-50">
+    <div className="flex flex-col justify-center items-center min-h-screen px-4 bg-gray-50">
       <ToastContainer position="top-right" />
+
       <div
         ref={invoiceRef}
         className="p-6 w-full max-w-md bg-white shadow-md rounded-lg"
@@ -77,13 +82,27 @@ function InvoiceContent() {
 
         {bookingDetails ? (
           <div className="text-base sm:text-lg">
-            <p><strong>Place Name:</strong> {bookingDetails.placeName}</p>
-            <p><strong>User Name:</strong> {bookingDetails.userName}</p>
-            <p><strong>Phone Number:</strong> {bookingDetails.phoneNumber}</p>
-            <p><strong>Vehicle Number:</strong> {bookingDetails.vehicleNumber}</p>
-            <p><strong>Vehicle Type:</strong> {bookingDetails.vehicleType}</p>
-            <p><strong>Time Slot:</strong> {bookingDetails.timeSlot}</p>
-            <p><strong>Spot Number:</strong> P{bookingDetails.spotNumber}</p>
+            <p>
+              <strong>Place Name:</strong> {bookingDetails.placeName}
+            </p>
+            <p>
+              <strong>User Name:</strong> {bookingDetails.userName}
+            </p>
+            <p>
+              <strong>Phone Number:</strong> {bookingDetails.phoneNumber}
+            </p>
+            <p>
+              <strong>Vehicle Number:</strong> {bookingDetails.vehicleNumber}
+            </p>
+            <p>
+              <strong>Vehicle Type:</strong> {bookingDetails.vehicleType}
+            </p>
+            <p>
+              <strong>Time Slot:</strong> {bookingDetails.timeSlot}
+            </p>
+            <p>
+              <strong>Spot Number:</strong> P{bookingDetails.spotsToBook}
+            </p>
 
             <button
               onClick={downloadInvoice}
@@ -93,17 +112,20 @@ function InvoiceContent() {
             </button>
           </div>
         ) : (
-          <p className="text-center text-red-600">Loading booking details...</p>
+          <p className="text-center text-red-600">
+            Loading booking details...
+          </p>
         )}
       </div>
-    </div>
-  );
-}
 
-export default function InvoicePage() {
-  return (
-    <Suspense fallback={<p className="text-center text-gray-500">Loading Invoice...</p>}>
-      <InvoiceContent />
-    </Suspense>
+      <div className="flex justify-center mt-6 exclude-from-print">
+        <button
+          onClick={() => router.push("/homepage")}
+          className="text-blue-700 hover:text-blue-900 font-medium flex items-center gap-1"
+        >
+          <span className="text-lg">←</span> Back to Home
+        </button>
+      </div>
+    </div>
   );
 }

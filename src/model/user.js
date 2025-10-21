@@ -7,12 +7,6 @@ const UserSchema = new mongoose.Schema(
             required: true,
             trim: true,
         },
-        username: {
-            type: String,
-            required: true,
-            unique: true,
-            trim: true,
-        },
         email: {
             type: String,
             required: true,
@@ -33,7 +27,6 @@ const UserSchema = new mongoose.Schema(
     { timestamps: true }
 );
 
-// Check if the model already exists before defining it
 const User = mongoose.models.User || mongoose.model("User", UserSchema);
 
 export default User;

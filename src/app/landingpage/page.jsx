@@ -12,7 +12,7 @@ export default function Home() {
   const router = useRouter();
 
   const handleSignup = () => {
-    router.push("/signup");
+    router.push("/login");
   };
 
   const handleScroll = (e) => {
@@ -144,9 +144,9 @@ export default function Home() {
             onClick={handleSignup}
             className="bg-black hover:bg-red-600 text-white px-3 py-1 rounded-md"
           >
-            SignUp
+            Login
           </button>
-          <Link href="/ownersignup">
+          <Link href="/ownerlogin">
             <button className="bg-white outline text-black px-3 py-1 rounded-md hover:outline-red-600">Admin</button>
           </Link>
         </nav>
@@ -174,7 +174,7 @@ export default function Home() {
             We <span className="text-red-600">P</span>ark.
           </h1>
           <TypingEffect />
-          <Link href="/signup">
+          <Link href="/login">
             <button className="bg-black hover:bg-red-600 text-white px-3 py-1 rounded-md text-lg md:text-xl mt-4">Book Spot</button>
           </Link>
         </div>
