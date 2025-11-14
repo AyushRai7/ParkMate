@@ -4,33 +4,33 @@ import User from "@/model/user.js";
 import Connection from "@/database/connection";
 import { NextResponse } from "next/server";
 
-Connection();
-
-export const POST = async (NextRequest) => {
+export const POST = async (req) => {
   try {
-    const body = await NextRequest.json();
+    await Connection();
+
+    const body = await req.json();
     const { email, password } = body;
 
     if (!email || !password) {
-      return new Response(
-        JSON.stringify({ message: "Email and password are required" }),
-        { status: 400, headers: { "Content-Type": "application/json" } }
+      return NextResponse.json(
+        { message: "Email and password are required" },
+        { status: 400 }
       );
     }
 
     const userfind = await User.findOne({ email });
     if (!userfind) {
-      return new Response(
-        JSON.stringify({ message: "User not found" }),
-        { status: 404, headers: { "Content-Type": "application/json" } }
+      return NextResponse.json(
+        { message: "User not found" },
+        { status: 404 }
       );
     }
 
     const validPassword = await bcrypt.compare(password, userfind.password);
     if (!validPassword) {
-      return new Response(
-        JSON.stringify({ message: "Invalid password" }),
-        { status: 400, headers: { "Content-Type": "application/json" } }
+      return NextResponse.json(
+        { message: "Invalid password" },
+        { status: 400 }
       );
     }
 
@@ -46,7 +46,6 @@ export const POST = async (NextRequest) => {
 
     response.cookies.set("userToken", token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
       maxAge: 3600,
       sameSite: "Strict",
       path: "/",
@@ -55,9 +54,9 @@ export const POST = async (NextRequest) => {
     return response;
   } catch (error) {
     console.error("Login Error:", error);
-    return new Response(
-      JSON.stringify({ message: "Internal server error" }),
-      { status: 500, headers: { "Content-Type": "application/json" } }
+    return NextResponse.json(
+      { message: "Internal server error" },
+      { status: 500 }
     );
   }
 };

@@ -81,10 +81,14 @@ export default function Home() {
 
     return (
       <div
-        className="my-6 text-xs text-gray-700 font-raleway"
+        className="
+      my-6 
+      text-base md:text-3xl 
+      text-gray-700 
+      font-raleway
+      mt-6
+    "
         style={{
-          fontSize: "2rem",
-          marginTop: "25px",
           fontFamily: "Nunito Sans, sans-serif",
           color: "rgb(13, 14, 62)",
         }}
@@ -103,6 +107,7 @@ export default function Home() {
             {word}{" "}
           </span>
         ))}
+
         <span className="border-r-0 border-gray-700 animate-blink">&nbsp;</span>
       </div>
     );
@@ -132,14 +137,23 @@ export default function Home() {
             />
           </div>
         </div>
-        <nav className="w-full md:w-[30%] mt-4 md:mt-0 mr-0 md:mr-14 flex flex-wrap md:flex-nowrap justify-center md:justify-evenly items-center gap-3 font-raleway text-base md:text-xl"
+        <nav
+          className="w-full md:w-[30%] mt-4 md:mt-0 mr-0 md:mr-14 flex flex-wrap md:flex-nowrap justify-center md:justify-evenly items-center gap-3 font-raleway text-base md:text-xl"
           style={{
             fontFamily: "Nunito Sans, sans-serif",
             color: "rgb(13, 14, 62)",
           }}
         >
-          <Link href="/" aria-label="Go to Home Page">Home</Link>
-          <Link href="#about" aria-label="Go to About Page" onClick={handleScroll}>About</Link>
+          <Link href="/" aria-label="Go to Home Page">
+            Home
+          </Link>
+          <Link
+            href="#about"
+            aria-label="Go to About Page"
+            onClick={handleScroll}
+          >
+            About
+          </Link>
           <button
             onClick={handleSignup}
             className="bg-black hover:bg-red-600 text-white px-3 py-1 rounded-md"
@@ -147,52 +161,80 @@ export default function Home() {
             Login
           </button>
           <Link href="/ownerlogin">
-            <button className="bg-white outline text-black px-3 py-1 rounded-md hover:outline-red-600">Admin</button>
+            <button className="bg-white outline text-black px-3 py-1 rounded-md hover:outline-red-600">
+              Admin
+            </button>
           </Link>
         </nav>
       </header>
 
       {/* Hero Section */}
-      <div className="flex flex-col md:flex-row justify-between items-center">
-        <div className="flex flex-col mt-12 md:mt-32 ml-4 md:ml-32 relative text-center md:text-left">
-          <div className="absolute left-[-20px] md:left-[-40px] top-4 flex flex-row">
-            <div className="w-1 h-16 md:h-24 bg-blue-900"></div>
-            <div className="w-1 h-16 md:h-24 bg-red-600 ml-2 md:ml-3 mt-3 md:mt-5"></div>
+      <div className="flex flex-col md:flex-row justify-between items-center px-4 md:px-0">
+        <div
+          className="flex flex-col mt-10 md:mt-32 md:ml-32 relative 
+             text-center md:text-left w-full md:w-1/2"
+        >
+          <div>
+            <div className="absolute hidden md:flex left-[-40px] top-4 flex-row">
+              <div className="w-1 h-24 bg-blue-900"></div>
+              <div className="w-1 h-24 bg-red-600 ml-3 mt-5"></div>
+            </div>
+
+            <div>
+              <h1
+                className="text-3xl md:text-7xl mb-1 mt-4 md:mt-8"
+                style={{
+                  fontFamily: "Raleway, sans-serif",
+                  color: "rgb(13, 14, 62)",
+                }}
+              >
+                You <span className="text-red-600">D</span>rive,
+              </h1>
+
+              <h1
+                className="text-3xl md:text-7xl"
+                style={{
+                  fontFamily: "Raleway, sans-serif",
+                  color: "rgb(13, 14, 62)",
+                }}
+              >
+                We <span className="text-red-600">P</span>ark.
+              </h1>
+            </div>
           </div>
-          <h1 className="text-4xl md:text-7xl mb-3 mt-4 md:mt-8"
-            style={{
-              fontFamily: "Raleway, sans-serif",
-              color: "rgb(13, 14, 62)",
-            }}>
-            You <span className="text-red-600">D</span>rive,
-          </h1>
-          <h1 className="text-4xl md:text-7xl"
-            style={{
-              fontFamily: "Raleway, sans-serif",
-              color: "rgb(13, 14, 62)",
-            }}>
-            We <span className="text-red-600">P</span>ark.
-          </h1>
-          <TypingEffect />
+
+          <div className="text-[1rem] md:text-[2rem]">
+            <TypingEffect />
+          </div>
+
           <Link href="/login">
-            <button className="bg-black hover:bg-red-600 text-white px-3 py-1 rounded-md text-lg md:text-xl mt-4">Book Spot</button>
+            <button
+              className="bg-black hover:bg-red-600 text-white 
+                 px-4 py-2 rounded-md 
+                 text-lg md:text-xl mt-4 mx-auto md:mx-0"
+            >
+              Book Spot
+            </button>
           </Link>
         </div>
 
-        <div className="mt-8 md:mt-28 w-[90%] md:w-[640px] h-auto flex justify-center mr-0 md:mr-14">
+        <div className="mt-10 md:mt-28 w-full md:w-[640px] flex justify-center md:justify-end">
           <Image
             src={main_img}
-            alt="Parking System Logo"
+            alt="Parking System"
             width={640}
             height={590}
-            className="w-full h-auto"
+            className="w-[90%] md:w-full h-auto"
             priority
           />
         </div>
       </div>
 
       {/* About Section */}
-      <div className="flex justify-center items-center mb-9 mt-20 md:mt-36 px-4" id="about-section">
+      <div
+        className="flex justify-center items-center mb-9 mt-20 md:mt-36 px-4"
+        id="about-section"
+      >
         <div className="w-full md:w-[70%] border-spacing-1 rounded-md px-5 md:px-20 py-6 md:py-11 shadow-md relative">
           <div className="flex flex-row my-6">
             <div className="flex flex-row">
@@ -262,7 +304,7 @@ export default function Home() {
       {/* Footer */}
       <div className="flex flex-col md:flex-row bg-gray-200 justify-between border-t-4 border-blue-900 w-full p-6 md:p-9 gap-8">
         <div className="flex flex-col md:ml-10 mt-2">
-          <div className="flex mb-5">
+          <div className="flex mb-5 items-center">
             <Image
               src={logo}
               alt="Parking System Logo"
@@ -288,11 +330,22 @@ export default function Home() {
               FOLLOW US ON{" "}
             </h4>
             <div className="w-full md:w-[40%] flex justify-center md:justify-evenly mr-0 md:mr-4 gap-4">
-              <Link href="https://www.instagram.com/ayush_rai077/" target="_blank">
+              <Link
+                href="https://www.instagram.com/ayush_rai077/"
+                target="_blank"
+              >
                 <Image src="/insta.png" alt="Insta" width={20} height={20} />
               </Link>
-              <Link href="https://www.linkedin.com/in/ayush-rai-271985291/" target="_blank">
-                <Image src="/linkdin.png" alt="LinkedIn" width={20} height={20} />
+              <Link
+                href="https://www.linkedin.com/in/ayush-rai-271985291/"
+                target="_blank"
+              >
+                <Image
+                  src="/linkdin.png"
+                  alt="LinkedIn"
+                  width={20}
+                  height={20}
+                />
               </Link>
               <Link href="https://github.com/AyushRai7" target="_blank">
                 <Image src="/github.png" alt="GitHub" width={20} height={20} />
@@ -316,8 +369,8 @@ export default function Home() {
             target="_blank"
             className="hover:text-red-700 ml-2"
           >
-            <p className="mt-4 cursor-pointer">IIIT KOTA, Ranpur,</p>
-            <p>Kota, Rajasthan-325003</p>
+            <p className="ml-2 cursor-pointer">IIIT KOTA, Ranpur,</p>
+            <p className="ml-2 cursor-pointer">Kota, Rajasthan-325003</p>
           </Link>
         </div>
 
@@ -358,15 +411,28 @@ export default function Home() {
               color: "rgb(34, 34, 34)",
             }}
           >
-            <Link href="/" className="mt-4 mb-2 hover:text-red-700">Home</Link>
-            <Link href="#" className="mb-2 hover:text-red-700" onClick={handleScroll}>About Parkmate</Link>
-            <Link href="/" className="mb-2 hover:text-red-700">Contact Us</Link>
-            <Link href="/" className="hover:text-red-700">Terms & Conditions</Link>
+            <Link href="/" className="mt-4 mb-2 hover:text-red-700">
+              Home
+            </Link>
+            <Link
+              href="#"
+              className="mb-2 hover:text-red-700"
+              onClick={handleScroll}
+            >
+              About Parkmate
+            </Link>
+            <Link href="/" className="mb-2 hover:text-red-700">
+              Contact Us
+            </Link>
+            <Link href="/" className="hover:text-red-700">
+              Terms & Conditions
+            </Link>
           </div>
         </div>
       </div>
 
-      <div className="flex justify-center bg-gray-200 text-xs md:text-sm font-medium text-center py-2"
+      <div
+        className="flex justify-center bg-gray-200 text-xs md:text-sm font-medium text-center py-2"
         style={{ fontFamily: "Raleway, sans-serif", color: "rgb(34, 34, 34)" }}
       >
         All Copyrights Reserved By Parkmate 2024

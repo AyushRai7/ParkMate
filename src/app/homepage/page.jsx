@@ -76,7 +76,7 @@ export default function Home() {
 
   const TypingEffect = () => {
       const sentences = [
-        "At your service, Anytime and Anywhere",
+        "At your service, Anytime and Anywhere.",
         "Leave your Parking needs to us!",
       ];
   
@@ -114,10 +114,14 @@ export default function Home() {
   
       return (
         <div
-          className="my-6 text-xs text-gray-700 font-raleway"
+          className="
+        my-6 
+        text-base md:text-3xl 
+        text-gray-700 
+        font-raleway
+        mt-6
+      "
           style={{
-            fontSize: "2rem",
-            marginTop: "25px",
             fontFamily: "Nunito Sans, sans-serif",
             color: "rgb(13, 14, 62)",
           }}
@@ -136,6 +140,7 @@ export default function Home() {
               {word}{" "}
             </span>
           ))}
+  
           <span className="border-r-0 border-gray-700 animate-blink">&nbsp;</span>
         </div>
       );
@@ -198,56 +203,66 @@ export default function Home() {
       </header>
 
       {/* Hero Section */}
-      <main className="flex flex-col md:flex-row justify-between px-4 md:px-0">
-        {/* Left Section */}
-        <div className="flex flex-col mt-20 md:mt-32 ml-4 md:ml-32 relative max-w-full md:max-w-xl">
-          {/* Two vertical lines */}
-          <div className="absolute left-[-20px] md:left-[-40px] top-4 flex flex-row">
-            <div className="w-1 h-20 md:h-24 bg-blue-900"></div>
-            <div className="w-1 h-20 md:h-24 bg-red-600 ml-2 md:ml-3 mt-3 md:mt-5"></div>
+      <div className="flex flex-col md:flex-row justify-between items-center px-4 md:px-0">
+        <div
+          className="flex flex-col mt-10 md:mt-32 md:ml-32 relative 
+             text-center md:text-left w-full md:w-1/2"
+        >
+          <div>
+            <div className="absolute hidden md:flex left-[-40px] top-4 flex-row">
+              <div className="w-1 h-24 bg-blue-900"></div>
+              <div className="w-1 h-24 bg-red-600 ml-3 mt-5"></div>
+            </div>
+
+            <div>
+              <h1
+                className="text-3xl md:text-7xl mb-1 mt-4 md:mt-8"
+                style={{
+                  fontFamily: "Raleway, sans-serif",
+                  color: "rgb(13, 14, 62)",
+                }}
+              >
+                You <span className="text-red-600">D</span>rive,
+              </h1>
+
+              <h1
+                className="text-3xl md:text-7xl"
+                style={{
+                  fontFamily: "Raleway, sans-serif",
+                  color: "rgb(13, 14, 62)",
+                }}
+              >
+                We <span className="text-red-600">P</span>ark.
+              </h1>
+            </div>
           </div>
 
-          {/* Headings */}
-          <h1
-            className="text-5xl md:text-7xl mb-3 mt-8"
-            style={{
-              fontFamily: "Raleway, sans-serif",
-              color: "rgb(13, 14, 62)",
-            }}
-          >
-            You <span className="text-red-600">D</span>rive,
-          </h1>
-          <h1
-            className="text-5xl md:text-7xl"
-            style={{
-              fontFamily: "Raleway, sans-serif",
-              color: "rgb(13, 14, 62)",
-            }}
-          >
-            We <span className="text-red-600">P</span>ark.
-          </h1>
-
-          <TypingEffect />
+          <div className="text-[1rem] md:text-[2rem]">
+            <TypingEffect />
+          </div>
 
           <Link href="/booking">
-            <button className="bg-black hover:bg-red-600 text-white px-3 py-1 rounded-md text-lg md:text-xl mt-4 max-w-max">
+            <button
+              className="bg-black hover:bg-red-600 text-white 
+                 px-4 py-2 rounded-md 
+                 text-lg md:text-xl mt-4 mx-auto md:mx-0"
+            >
               Book Spot
             </button>
           </Link>
         </div>
 
-        {/* Right Section - Image */}
-        <div className="mr-0 md:mr-14 mt-10 md:mt-28 w-full md:w-[640px] flex justify-center">
+        <div className="mt-10 md:mt-28 w-full md:w-[640px] flex justify-center md:justify-end">
           <Image
             src={main_img}
-            alt="Parking System Logo"
+            alt="Parking System"
             width={640}
             height={590}
-            className="w-full h-auto"
+            className="w-[90%] md:w-full h-auto"
             priority
           />
         </div>
-      </main>
+      </div>
 
       {/* About Section */}
       <section
