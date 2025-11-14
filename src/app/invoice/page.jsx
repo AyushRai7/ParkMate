@@ -19,26 +19,28 @@ function InvoiceContent() {
   const invoiceRef = useRef(null);
 
   useEffect(() => {
-    if (!searchParams || searchParams.size === 0) return;
+  const placeName = searchParams.get("placeName");
+  if (!placeName) return; 
 
-    const params = {
-      placeName: searchParams.get("placeName")?.toUpperCase() || "",
-      userName: searchParams.get("userName"),
-      phoneNumber: searchParams.get("phoneNumber"),
-      vehicleNumber: searchParams.get("vehicleNumber"),
-      vehicleType: searchParams.get("vehicleType"),
-      timeSlot: searchParams.get("timeSlot"),
-      spotNumber: searchParams.get("spotsBooked"),
-    };
+  const params = {
+    placeName: placeName.toUpperCase(),
+    userName: searchParams.get("userName"),
+    phoneNumber: searchParams.get("phoneNumber"),
+    vehicleNumber: searchParams.get("vehicleNumber"),
+    vehicleType: searchParams.get("vehicleType"),
+    timeSlot: searchParams.get("timeSlot"),
+    spotNumber: searchParams.get("spotsBooked"),
+  };
 
-    if (Object.values(params).some((val) => !val)) {
-      toast.error("Missing booking details.");
-      router.push("/booking");
-      return;
-    }
+  if (Object.values(params).some((val) => !val)) {
+    toast.error("Missing booking details.");
+    router.push("/booking");
+    return;
+  }
 
-    setBookingDetails(params);
-  }, [searchParams, router]);
+  setBookingDetails(params);
+}, [searchParams]);
+
 
   const downloadInvoice = async () => {
     if (!invoiceRef.current) return;
@@ -98,7 +100,6 @@ function InvoiceContent() {
         )}
       </div>
 
-      {/* Back to home link */}
       <button
         onClick={() => router.push("/homepage")}
         className="fixed top-6 left-6 flex items-center gap-2 text-blue-600 hover:text-blue-800 font-medium"
