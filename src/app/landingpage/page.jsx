@@ -1,12 +1,13 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import logo from "../assets/logo.png";
-import footer_logo_name from "../assets/footer_logo_name.png";
 import logo_name from "../assets/logo_name.png";
 import main_img from "../assets/main_img1.png";
+import TypingEffect from "../typingeffect/page";
+import FooterSection from "../footer/page";
 
 export default function Home() {
   const router = useRouter();
@@ -39,78 +40,6 @@ export default function Home() {
         }
       }, 500);
     }
-  };
-
-  const TypingEffect = () => {
-    const sentences = [
-      "At your service, Anytime and Anywhere.",
-      "Leave your Parking needs to us!",
-    ];
-
-    const [displayText, setDisplayText] = useState("");
-    const [sentenceIndex, setSentenceIndex] = useState(0);
-    const [charIndex, setCharIndex] = useState(0);
-    const [isDeleting, setIsDeleting] = useState(false);
-
-    useEffect(() => {
-      const handleTyping = () => {
-        const currentSentence = sentences[sentenceIndex];
-        const isLastChar = charIndex === currentSentence.length;
-
-        if (!isDeleting && !isLastChar) {
-          setDisplayText(currentSentence.substring(0, charIndex + 1));
-          setCharIndex(charIndex + 1);
-        } else if (isDeleting && charIndex > 0) {
-          setDisplayText(currentSentence.substring(0, charIndex - 1));
-          setCharIndex(charIndex - 1);
-        } else if (!isDeleting && isLastChar) {
-          setTimeout(() => setIsDeleting(true), 1000);
-        } else if (isDeleting && charIndex === 0) {
-          setIsDeleting(false);
-          setSentenceIndex((sentenceIndex + 1) % sentences.length);
-        }
-      };
-
-      const typingSpeed = isDeleting ? 50 : 100;
-      const typingDelay = isDeleting && charIndex === 0 ? 500 : typingSpeed;
-
-      const timer = setTimeout(handleTyping, typingDelay);
-
-      return () => clearTimeout(timer);
-    }, [charIndex, isDeleting, sentenceIndex]);
-
-    return (
-      <div
-        className="
-      my-6 
-      text-base md:text-3xl 
-      text-gray-700 
-      font-raleway
-      mt-6
-    "
-        style={{
-          fontFamily: "Nunito Sans, sans-serif",
-          color: "rgb(13, 14, 62)",
-        }}
-      >
-        {displayText.split(" ").map((word, index) => (
-          <span
-            key={index}
-            className={
-              ["Anytime", "Anywhere", "Parking"].includes(
-                word.replace(/[.,]/g, "")
-              )
-                ? "font-medium"
-                : ""
-            }
-          >
-            {word}{" "}
-          </span>
-        ))}
-
-        <span className="border-r-0 border-gray-700 animate-blink">&nbsp;</span>
-      </div>
-    );
   };
 
   return (
@@ -302,141 +231,7 @@ export default function Home() {
       </div>
 
       {/* Footer */}
-      <div className="flex flex-col md:flex-row bg-gray-200 justify-between border-t-4 border-blue-900 w-full p-6 md:p-9 gap-8">
-        <div className="flex flex-col md:ml-10 mt-2">
-          <div className="flex mb-5 items-center">
-            <Image
-              src={logo}
-              alt="Parking System Logo"
-              className="w-auto h-12 md:h-16 object-contain"
-              priority
-            />
-            <Image
-              src={footer_logo_name}
-              alt="Logo Name"
-              className="w-auto h-10 md:h-12 object-contain ml-4"
-              priority
-            />
-          </div>
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
-            <h4
-              className="ml-2"
-              style={{
-                fontFamily: "Raleway, sans-serif",
-                color: "rgb(34, 34, 34)",
-                fontWeight: "490",
-              }}
-            >
-              FOLLOW US ON{" "}
-            </h4>
-            <div className="w-full md:w-[40%] flex justify-center md:justify-evenly mr-0 md:mr-4 gap-4">
-              <Link
-                href="https://www.instagram.com/ayush_rai077/"
-                target="_blank"
-              >
-                <Image src="/insta.png" alt="Insta" width={20} height={20} />
-              </Link>
-              <Link
-                href="https://www.linkedin.com/in/ayush-rai-271985291/"
-                target="_blank"
-              >
-                <Image
-                  src="/linkdin.png"
-                  alt="LinkedIn"
-                  width={20}
-                  height={20}
-                />
-              </Link>
-              <Link href="https://github.com/AyushRai7" target="_blank">
-                <Image src="/github.png" alt="GitHub" width={20} height={20} />
-              </Link>
-            </div>
-          </div>
-        </div>
-
-        <div>
-          <h3
-            className="ml-2 text-sm font-semibold"
-            style={{
-              fontFamily: "Raleway, sans-serif",
-              color: "rgb(34, 34, 34)",
-            }}
-          >
-            WHERE TO FIND
-          </h3>
-          <Link
-            href="https://www.google.com/maps/search/?api=1&query=IIIT+Kota+Permanent+Campus,Ranpur,Kota,Rajasthan-325003"
-            target="_blank"
-            className="hover:text-red-700 ml-2"
-          >
-            <p className="ml-2 cursor-pointer">IIIT KOTA, Ranpur,</p>
-            <p className="ml-2 cursor-pointer">Kota, Rajasthan-325003</p>
-          </Link>
-        </div>
-
-        <div>
-          <h3
-            className="ml-2 text-sm font-semibold"
-            style={{
-              fontFamily: "Nunito Sans, sans-serif",
-              color: "rgb(34, 34, 34)",
-            }}
-          >
-            CONTACT US
-          </h3>
-          <p className="mt-4 mb-2 hover:text-red-700 cursor-pointer ml-2">
-            +91-9717835155
-          </p>
-          <Link href="mailto:ayushrai1729@gmail.com">
-            <p className="hover:text-red-700 cursor-pointer ml-2">
-              ayushrai1729@gmail.com
-            </p>
-          </Link>
-        </div>
-
-        <div>
-          <h3
-            className="ml-2 text-sm font-semibold"
-            style={{
-              fontFamily: "Nunito Sans, sans-serif",
-              color: "rgb(34, 34, 34)",
-            }}
-          >
-            DISCOVER
-          </h3>
-          <div
-            className="flex flex-col ml-2 mb-4 mr-8 text-sm"
-            style={{
-              fontFamily: "Nunito Sans, sans-serif",
-              color: "rgb(34, 34, 34)",
-            }}
-          >
-            <Link href="/" className="mt-4 mb-2 hover:text-red-700">
-              Home
-            </Link>
-            <Link
-              href="#"
-              className="mb-2 hover:text-red-700"
-              onClick={handleScroll}
-            >
-              About Parkmate
-            </Link>
-            <Link href="/" className="mb-2 hover:text-red-700">
-              Contact Us
-            </Link>
-            <Link href="/" className="hover:text-red-700">
-              Terms & Conditions
-            </Link>
-          </div>
-        </div>
-      </div>
-
-      <div
-        className="flex justify-center bg-gray-200 text-xs md:text-sm font-medium text-center py-2"
-        style={{ fontFamily: "Raleway, sans-serif", color: "rgb(34, 34, 34)" }}
-      >
-        All Copyrights Reserved By Parkmate 2024
-      </div>
+      <FooterSection />
     </div>
   );
 }

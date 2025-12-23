@@ -1,15 +1,16 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import logo from "../assets/logo.png";
-import footer_logo_name from "../assets/footer_logo_name.png";
 import logo_name from "../assets/logo_name.png";
 import main_img from "../assets/main_img1.png";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import TypingEffect from "../typingeffect/page";
+import FooterSection from "../footer/page";
 
 export default function Home() {
   const router = useRouter();
@@ -74,77 +75,6 @@ export default function Home() {
     }
   };
 
-  const TypingEffect = () => {
-      const sentences = [
-        "At your service, Anytime and Anywhere.",
-        "Leave your Parking needs to us!",
-      ];
-  
-      const [displayText, setDisplayText] = useState("");
-      const [sentenceIndex, setSentenceIndex] = useState(0);
-      const [charIndex, setCharIndex] = useState(0);
-      const [isDeleting, setIsDeleting] = useState(false);
-  
-      useEffect(() => {
-        const handleTyping = () => {
-          const currentSentence = sentences[sentenceIndex];
-          const isLastChar = charIndex === currentSentence.length;
-  
-          if (!isDeleting && !isLastChar) {
-            setDisplayText(currentSentence.substring(0, charIndex + 1));
-            setCharIndex(charIndex + 1);
-          } else if (isDeleting && charIndex > 0) {
-            setDisplayText(currentSentence.substring(0, charIndex - 1));
-            setCharIndex(charIndex - 1);
-          } else if (!isDeleting && isLastChar) {
-            setTimeout(() => setIsDeleting(true), 1000);
-          } else if (isDeleting && charIndex === 0) {
-            setIsDeleting(false);
-            setSentenceIndex((sentenceIndex + 1) % sentences.length);
-          }
-        };
-  
-        const typingSpeed = isDeleting ? 50 : 100;
-        const typingDelay = isDeleting && charIndex === 0 ? 500 : typingSpeed;
-  
-        const timer = setTimeout(handleTyping, typingDelay);
-  
-        return () => clearTimeout(timer);
-      }, [charIndex, isDeleting, sentenceIndex]);
-  
-      return (
-        <div
-          className="
-        my-6 
-        text-base md:text-3xl 
-        text-gray-700 
-        font-raleway
-        mt-6
-      "
-          style={{
-            fontFamily: "Nunito Sans, sans-serif",
-            color: "rgb(13, 14, 62)",
-          }}
-        >
-          {displayText.split(" ").map((word, index) => (
-            <span
-              key={index}
-              className={
-                ["Anytime", "Anywhere", "Parking"].includes(
-                  word.replace(/[.,]/g, "")
-                )
-                  ? "font-medium"
-                  : ""
-              }
-            >
-              {word}{" "}
-            </span>
-          ))}
-  
-          <span className="border-r-0 border-gray-700 animate-blink">&nbsp;</span>
-        </div>
-      );
-    };
 
   return (
     <div>
@@ -341,176 +271,8 @@ export default function Home() {
       </section>
 
       {/* Footer */}
-      <footer className="flex flex-col md:flex-row bg-gray-200 justify-between border-t-4 border-blue-900 w-full p-6 md:p-9">
-        {/* Logo and Social */}
-        <div className="flex flex-col md:ml-10 mt-2">
-          <div className="flex mb-5">
-            <div className="flex justify-center items-center">
-              <Image
-                src={logo}
-                alt="Parking System Logo"
-                className="w-auto h-12 md:h-16 object-contain"
-                priority
-              />
-            </div>
-
-            <div className="flex justify-center items-center ml-4">
-              <Image
-                src={footer_logo_name}
-                alt="Logo Name"
-                className="w-auto h-10 md:h-12 object-contain"
-                priority
-              />
-            </div>
-          </div>
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
-            <h4
-              className="ml-2 text-base md:text-lg font-semibold"
-              style={{
-                fontFamily: "Raleway, sans-serif",
-                color: "rgb(34, 34, 34)",
-                fontWeight: "490",
-              }}
-            >
-              FOLLOW US ON
-            </h4>
-            <div className="w-full md:w-[40%] flex justify-center md:justify-evenly mr-0 md:mr-4 gap-4">
-              <Link href="https://www.instagram.com/ayush_rai077/" target="_blank" aria-label="Instagram">
-                <Image src="/insta.png" alt="Instagram Icon" width={20} height={20} />
-              </Link>
-              <Link href="https://www.linkedin.com/in/ayush-rai-271985291/" target="_blank" aria-label="LinkedIn">
-                <Image src="/linkdin.png" alt="LinkedIn Icon" width={20} height={20} />
-              </Link>
-              <Link href="https://github.com/AyushRai7" target="_blank" aria-label="GitHub">
-                <Image src="/github.png" alt="GitHub Icon" width={20} height={20} />
-              </Link>
-            </div>
-          </div>
-        </div>
-
-        {/* Where To Find */}
-        <div>
-          <div className="flex items-center">
-            <div className="w-1 h-5 bg-red-600"></div>
-            <h3
-              className="ml-2 text-sm md:text-base font-semibold"
-              style={{
-                fontFamily: "Raleway, sans-serif",
-                color: "rgb(34, 34, 34)",
-              }}
-            >
-              WHERE TO FIND
-            </h3>
-          </div>
-
-          <div
-            className="ml-2 text-sm md:text-base font-medium"
-            style={{
-              fontFamily: "Nunito Sans, sans-serif",
-              color: "rgb(34, 34, 34)",
-            }}
-          >
-            <Link
-              href="https://www.google.com/maps/search/?api=1&query=IIIT+Kota+Permanent+Campus,Ranpur,Kota,Rajasthan-325003"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hover:text-red-700"
-            >
-              <p className="mt-4 cursor-pointer">IIIT KOTA, Ranpur,</p>
-              <p>Kota, Rajasthan-325003</p>
-            </Link>
-          </div>
-        </div>
-
-        {/* Contact Us */}
-        <div>
-          <div className="flex items-center">
-            <div className="w-1 h-5 bg-red-700"></div>
-            <h3
-              className="ml-2 text-sm md:text-base font-semibold"
-              style={{
-                fontFamily: "Nunito Sans, sans-serif",
-                color: "rgb(34, 34, 34)",
-              }}
-            >
-              CONTACT US
-            </h3>
-          </div>
-
-          <div className="ml-2">
-            <p className="mt-4 mb-2 hover:text-red-700 cursor-pointer">
-              +91-9717835155
-            </p>
-            <Link href="mailto:ayushrai1729@gmail.com" className="hover:text-red-700 cursor-pointer">
-              ayushrai1729@gmail.com
-            </Link>
-          </div>
-        </div>
-
-        {/* Discover */}
-        <div>
-          <div className="flex items-center">
-            <div className="w-1 h-5 bg-red-700"></div>
-            <h3
-              className="ml-2 text-sm md:text-base font-semibold"
-              style={{
-                fontFamily: "Nunito Sans, sans-serif",
-                color: "rgb(34, 34, 34)",
-              }}
-            >
-              DISCOVER
-            </h3>
-          </div>
-
-          <div
-            className="flex flex-col ml-2 mb-4 mr-0 md:mr-8 text-sm md:text-base"
-            style={{
-              fontFamily: "Nunito Sans, sans-serif",
-              color: "rgb(34, 34, 34)",
-            }}
-          >
-            <Link
-              href="/homepage"
-              aria-label="Go to Home Page"
-              className="mt-4 mb-2 hover:text-red-700"
-            >
-              Home
-            </Link>
-            <Link
-              href="#about"
-              aria-label="Go to About Section"
-              className="mb-2 hover:text-red-700"
-              onClick={handleScroll}
-            >
-              About Parkmate
-            </Link>
-            <Link
-              href="#contactus"
-              aria-label="Go to Contact Section"
-              className="mb-2 hover:text-red-700"
-            >
-              Contact Us
-            </Link>
-            <Link
-              href="#termsandcondition"
-              aria-label="Go to Terms and Conditions"
-              className="hover:text-red-700"
-            >
-              Terms & Conditions
-            </Link>
-          </div>
-        </div>
-      </footer>
-
-      <div
-        className="flex justify-center bg-gray-200 text-xs md:text-sm font-medium p-2"
-        style={{
-          fontFamily: "Raleway, sans-serif",
-          color: "rgb(34, 34, 34)",
-        }}
-      >
-        All Copyrights Reserved By Parkmate 2024
-      </div>
+      <FooterSection />
+      
     </div>
   );
 }
