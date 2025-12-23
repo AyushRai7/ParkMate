@@ -1,4 +1,6 @@
 import React from 'react'
+import Image from "next/image";
+import Link from "next/link";
 import logo from "../assets/logo.png";
 import footer_logo_name from "../assets/footer_logo_name.png";
 
@@ -164,7 +166,7 @@ const FooterSection = () => {
         className="flex justify-center bg-gray-200 text-xs md:text-sm font-medium text-center py-2"
         style={{ fontFamily: "Raleway, sans-serif", color: "rgb(34, 34, 34)" }}
       >
-        All Copyrights Reserved By Parkmate 2024
+        All Copyrights Reserved By Parkmate 2026
       </div>
     </div>
   )

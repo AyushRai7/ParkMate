@@ -19,16 +19,42 @@ export default function Owner() {
   const [searchUser, setSearchUser] = useState("");
   const [searchVehicleNo, setSearchVehicleNo] = useState("");
 
+
+const [filterVehicles, setFilterVehicles] = useState([]);
+const [filterTimeSlots, setFilterTimeSlots] = useState([]);
+const [filterVenues, setFilterVenues] = useState([]);
+
+const filteredBookings = bookings.filter((b) => {
+  return (
+    (filterVehicles.length === 0 || filterVehicles.includes(b.vehicleType)) &&
+    (filterTimeSlots.length === 0 || filterTimeSlots.includes(b.timeSlot)) &&
+    (filterVenues.length === 0 || filterVenues.includes(b.placeName)) &&
+    (!searchUser || b.userName.toLowerCase().includes(searchUser.toLowerCase())) &&
+    (!searchVehicleNo || b.vehicleNumber.toLowerCase().includes(searchVehicleNo.toLowerCase()))
+  );
+});
+
   // Filter bookings with both search and filter
-  const filteredBookings = bookings.filter((b) => {
-    return (
-      (!filterVehicle || b.vehicleType === filterVehicle) &&
-      (!filterTimeSlot || b.timeSlot === filterTimeSlot) &&
-      (!filterVenue || b.placeName === filterVenue) &&
-      (!searchUser || b.userName.toLowerCase().includes(searchUser.toLowerCase())) &&
-      (!searchVehicleNo || b.vehicleNumber.toLowerCase().includes(searchVehicleNo.toLowerCase()))
-    );
-  });
+  const toggleValue = (value, setter, current) => {
+  setter(
+    current.includes(value)
+      ? current.filter((v) => v !== value)
+      : [...current, value]
+  );
+};
+
+const removeChip = (value) => {
+  setFilterVehicles((prev) => prev.filter((v) => v !== value));
+  setFilterTimeSlots((prev) => prev.filter((v) => v !== value));
+  setFilterVenues((prev) => prev.filter((v) => v !== value));
+};
+
+const clearAllFilters = () => {
+  setFilterVehicles([]);
+  setFilterTimeSlots([]);
+  setFilterVenues([]);
+};
+
 
   useEffect(() => {
     fetchVenues();
@@ -244,12 +270,113 @@ export default function Owner() {
       <div className="mt-2 relative">
         <div className="flex flex-col md:flex-row justify-between items-center mb-4 gap-2">
           <h2 className="text-lg sm:text-xl font-semibold">Bookings for Your Venues</h2>
-          <button onClick={() => setShowFilter(true)} className="p-2 bg-gray-100 hover:bg-gray-200 rounded-full">
-            <SlidersHorizontal className="w-5 h-5 text-gray-700" />
-          </button>
+          <button
+    onClick={() => setShowFilter(!showFilter)}
+    className="p-2 bg-gray-100 hover:bg-gray-200 rounded-full transition"
+  >
+    {showFilter ? "✕" : <SlidersHorizontal className="w-5 h-5" />}
+  </button>
         </div>
 
-        {/* ... Filter modal remains unchanged ... */}
+
+{/* FILTER SECTION */}
+<div className="relative flex justify-end mb-3">
+  <div
+    className={`absolute right-0 top-1 w-72 bg-white border rounded-xl shadow-lg p-4
+      transition-all duration-300 origin-top-right
+      ${showFilter
+        ? "scale-100 opacity-100 translate-y-0"
+        : "scale-95 opacity-0 -translate-y-2 pointer-events-none"
+      }`}
+  >
+    {/* <h3 className="text-lg font-semibold mb-3">Filters</h3> */}
+
+    {/* Vehicle Type */}
+    <div className="mb-4">
+      <p className="text-sm font-medium mb-2">Vehicle Type</p>
+      <div className="flex gap-2">
+        {["Car", "Bike"].map((v) => (
+          <button
+            key={v}
+            onClick={() =>
+              toggleValue(v, setFilterVehicles, filterVehicles)
+            }
+            className={`px-3 py-1 rounded-full text-sm border transition
+              ${filterVehicles.includes(v)
+                ? "bg-black text-white"
+                : "bg-gray-100 hover:bg-gray-200"
+              }`}
+          >
+            {v}
+          </button>
+        ))}
+      </div>
+    </div>
+
+    {/* Time Slot */}
+    <div className="mb-4">
+      <p className="text-sm font-medium mb-2">Time Slot</p>
+      <div className="flex flex-wrap gap-2">
+        {[
+          "10 AM - 12 PM",
+          "12 PM - 2 PM",
+          "2 PM - 4 PM",
+          "4 PM - 6 PM",
+        ].map((t) => (
+          <button
+            key={t}
+            onClick={() =>
+              toggleValue(t, setFilterTimeSlots, filterTimeSlots)
+            }
+            className={`px-3 py-1 rounded-full text-xs border transition
+              ${filterTimeSlots.includes(t)
+                ? "bg-black text-white"
+                : "bg-gray-100 hover:bg-gray-200"
+              }`}
+          >
+            {t}
+          </button>
+        ))}
+      </div>
+    </div>
+
+    {/* Venue */}
+    <div className="mb-4">
+      <p className="text-sm font-medium mb-2">Venue</p>
+      <div className="flex flex-wrap gap-2 max-h-28 overflow-y-auto">
+        {ownedVenues.map((v) => (
+          <button
+            key={v._id}
+            onClick={() =>
+              toggleValue(v.placeName, setFilterVenues, filterVenues)
+            }
+            className={`px-3 py-1 rounded-full text-xs border transition
+              ${filterVenues.includes(v.placeName)
+                ? "bg-black text-white"
+                : "bg-gray-100 hover:bg-gray-200"
+              }`}
+          >
+            {v.placeName}
+          </button>
+        ))}
+      </div>
+    </div>
+
+    {/* Clear */}
+    {(filterVehicles.length > 0 ||
+      filterTimeSlots.length > 0 ||
+      filterVenues.length > 0) && (
+      <button
+        onClick={clearAllFilters}
+        className="text-sm text-red-600 hover:underline"
+      >
+        Clear all filters
+      </button>
+    )}
+  </div>
+</div>
+
+
 
         {filteredBookings.length === 0 ? (
           <p className="text-gray-600">No bookings found.</p>

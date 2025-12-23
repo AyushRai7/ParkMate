@@ -1,0 +1,11 @@
+import { cookies } from "next/headers";
+import { NextResponse } from "next/server";
+
+export async function GET() {
+  const cookieStore = cookies();
+
+  return NextResponse.json({
+    userLoggedIn: !!cookieStore.get("userToken"),
+    ownerLoggedIn: !!cookieStore.get("ownerToken"),
+  });
+}

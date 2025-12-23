@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -15,37 +15,65 @@ import FooterSection from "../footer/page";
 export default function Home() {
   const router = useRouter();
 
-  const handleAdmin = () => {
-    console.log("Cookies:", document.cookie); // Debug
-    const tokenExists = document.cookie.includes("ownerToken");
-    console.log("Token exists?", tokenExists);
-    if (tokenExists) {
-      router.push("/owner");
+  const [userLoggedIn, setUserLoggedIn] = useState(false);
+  const [ownerLoggedIn, setOwnerLoggedIn] = useState(false);
+
+  useEffect(() => {
+    const checkAuth = async () => {
+    try {
+      const res = await fetch("/api/tokencheck", {
+        credentials: "include",
+      });
+      const data = await res.json();
+
+      setUserLoggedIn(data.userLoggedIn);
+      setOwnerLoggedIn(data.ownerLoggedIn);
+    } catch (err) {
+      console.error(err);
+    } //finally {
+    //   setLoading(false);
+    // }
+  };
+
+  checkAuth();
+  }, []);
+
+  const getCookie = (name) => {
+    if (typeof document === "undefined") return null;
+    const match = document.cookie
+      .split("; ")
+      .find((row) => row.startsWith(name + "="));
+    return match ? match.split("=")[1] : null;
+  };
+
+  const handleUserAuth = async () => {
+    if (userLoggedIn) {
+      try {
+        const res = await fetch("/api/logout", {
+          method: "GET",
+          credentials: "include",
+        });
+
+        if (res.ok) {
+          toast.warning("Logged out", { autoClose: 2000 });
+          setUserLoggedIn(false);
+          router.push("/login");
+        } else {
+          toast.error("Logout failed");
+        }
+      } catch (err) {
+        toast.error("Error during logout");
+      }
     } else {
-      router.push("/ownerlogin");
+      router.push("/login");
     }
   };
 
-  const handleLogout = async () => {
-    try {
-      const res = await fetch("/api/logout", {
-        method: "GET",
-        credentials: "include",
-      });
-
-      if (res.ok) {
-        toast.warning("Successfully logged out", { autoClose: 2000 });
-
-        setTimeout(() => {
-          router.push("/login");
-        }, 2000);
-      } else {
-        toast.error("Logout failed", { autoClose: 2000 });
-        console.error("Logout failed");
-      }
-    } catch (error) {
-      toast.error("Error in Logout", { autoClose: 2000 });
-      console.error("Error logging out:", error);
+  const handleAdmin = () => {
+    if (ownerLoggedIn) {
+      router.push("/owner");
+    } else {
+      router.push("/ownerlogin");
     }
   };
 
@@ -74,7 +102,6 @@ export default function Home() {
       }, 500);
     }
   };
-
 
   return (
     <div>
@@ -112,16 +139,20 @@ export default function Home() {
           <Link href="/homepage" aria-label="Go to Home Page">
             Home
           </Link>
-          <Link href="#about" onClick={handleScroll} aria-label="Go to About Section">
+          <Link
+            href="#about"
+            onClick={handleScroll}
+            aria-label="Go to About Section"
+          >
             About
           </Link>
           <button
-            onClick={handleLogout}
+            onClick={handleUserAuth}
             className="bg-black hover:bg-red-600 text-white px-3 py-1 rounded-md"
-            aria-label="Logout"
           >
-            Logout
+            {userLoggedIn ? "Logout" : "Login"}
           </button>
+
           <button
             className="bg-white outline text-black px-3 py-1 rounded-md hover:outline-red-600"
             onClick={handleAdmin}
@@ -170,16 +201,23 @@ export default function Home() {
           <div className="text-[1rem] md:text-[2rem]">
             <TypingEffect />
           </div>
-
-          <Link href="/booking">
+          <div>
             <button
-              className="bg-black hover:bg-red-600 text-white 
-                 px-4 py-2 rounded-md 
-                 text-lg md:text-xl mt-4 mx-auto md:mx-0"
-            >
-              Book Spot
-            </button>
-          </Link>
+            onClick={() => {
+              if (userLoggedIn) {
+                router.push("/booking");
+              } else {
+                router.push("/login");
+              }
+            }}
+            className="bg-black hover:bg-red-600 text-white 
+    px-4 py-2 rounded-md 
+    text-lg md:text-xl mt-4 mx-auto md:mx-0"
+          >
+            Book Spot
+          </button>
+          </div>
+          
         </div>
 
         <div className="mt-10 md:mt-28 w-full md:w-[640px] flex justify-center md:justify-end">
@@ -240,8 +278,8 @@ export default function Home() {
               for you. With ParkMate, You drive. We Park.
             </p>
           </div>
-          </div>
-        </section>
+        </div>
+      </section>
 
       {/* Quote Section */}
       <section className="p-5 mt-20 md:mt-40 mb-10 md:mb-28 flex justify-center items-center bg-[url('/bg-quote.png')] bg-no-repeat bg-center md:bg-[170px_top] px-4 md:px-0">
@@ -253,7 +291,8 @@ export default function Home() {
               color: "rgb(13, 14, 62)",
             }}
           >
-            An average car driver spends upto 19 mins in finding a parking in a metro city.
+            An average car driver spends upto 19 mins in finding a parking in a
+            metro city.
           </p>
 
           <div className="w-full flex justify-end mt-5">
@@ -272,7 +311,6 @@ export default function Home() {
 
       {/* Footer */}
       <FooterSection />
-      
     </div>
   );
 }

@@ -7,10 +7,9 @@ export const GET = async () => {
     try {
         const response = NextResponse.json({ message: "Logout successful", success: true });
 
-        // Clear the token by setting an expired cookie
         response.cookies.set("userToken", "", {
             httpOnly: true,
-            expires: new Date(0), // Setting expiry to a past date
+            expires: new Date(0), 
         });
 
         return response;
