@@ -5,6 +5,13 @@ import Booking from "@/model/booking";
 import jwt from "jsonwebtoken";
 import { cookies } from "next/headers";
 
+function getNextAvailableSlot(totalSlots, bookedSlots) {
+  for (let i = 1; i <= totalSlots; i++) {
+    if (!bookedSlots.includes(i)) return i;
+  }
+  return null;
+}
+
 export async function GET(req) {
   try {
     await connectDb();
@@ -13,14 +20,13 @@ export async function GET(req) {
 
     if (!placeName) {
       return NextResponse.json(
-        { message: "Venue userName is required" },
+        { message: "placeName is required" },
         { status: 400 }
       );
     }
 
-    const placeNameClean = placeName.trim().toUpperCase();
     const parking = await Parking.findOne({
-      placeName: { $regex: new RegExp(`^${placeNameClean}$`, "i") },
+      placeName: { $regex: new RegExp(`^${placeName.trim()}$`, "i") },
     });
 
     if (!parking) {
@@ -28,8 +34,8 @@ export async function GET(req) {
     }
 
     return NextResponse.json(parking, { status: 200 });
-  } catch (error) {
-    console.error("Error in GET:", error.message);
+  } catch (err) {
+    console.error("Parking GET error:", err);
     return NextResponse.json(
       { message: "Internal Server Error" },
       { status: 500 }
@@ -40,9 +46,8 @@ export async function GET(req) {
 export async function POST(req) {
   try {
     await connectDb();
-    const cookieStore = await cookies();
-    const token = cookieStore.get("userToken")?.value;
 
+    const token = cookies().get("userToken")?.value;
     if (!token) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
@@ -50,7 +55,6 @@ export async function POST(req) {
     const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
     const userId = decoded.id;
 
-    const body = await req.json();
     const {
       placeName,
       userName,
@@ -58,16 +62,9 @@ export async function POST(req) {
       vehicleNumber,
       vehicleType,
       timeSlot,
-    } = body;
+    } = await req.json();
 
-    if (
-      !placeName ||
-      !userName ||
-      !phoneNumber ||
-      !vehicleNumber ||
-      !vehicleType ||
-      !timeSlot
-    ) {
+    if (!placeName || !userName || !phoneNumber || !vehicleNumber || !vehicleType || !timeSlot) {
       return NextResponse.json({ message: "All fields are required" }, { status: 400 });
     }
 
@@ -76,62 +73,55 @@ export async function POST(req) {
       return NextResponse.json({ message: "Venue not found" }, { status: 404 });
     }
 
-    const type = vehicleType;
+    const isCar = vehicleType === "Car";
+    const totalSlots = isCar ? parking.totalSlotsOfCar : parking.totalSlotsOfBike;
+    const bookedSlots = isCar ? [...parking.bookedSlotsOfCar] : [...parking.bookedSlotsOfBike];
 
-    let nextSlotNumber;
-    if (type === "Car") {
-      if (parking.availableSlotsOfCar < 1) {
-        return NextResponse.json({ message: "No available car slots" }, { status: 400 });
-      }
-
-      nextSlotNumber = parking.bookedSlotsOfCar.length + 1;
-      parking.bookedSlotsOfCar.push(nextSlotNumber);
-      parking.availableSlotsOfCar = parking.totalSlotsOfCar - parking.bookedSlotsOfCar.length;
-
-    } else if (type === "Bike") {
-      if (parking.availableSlotsOfBike < 1) {
-        return NextResponse.json({ message: "No available bike slots" }, { status: 400 });
-      }
-
-      nextSlotNumber = parking.bookedSlotsOfBike.length + 1;
-      parking.bookedSlotsOfBike.push(nextSlotNumber);
-      parking.availableSlotsOfBike = parking.totalSlotsOfBike - parking.bookedSlotsOfBike.length;
-
-    } else {
-      return NextResponse.json({ message: "Invalid vehicle type" }, { status: 400 });
+    const slotNumber = getNextAvailableSlot(totalSlots, bookedSlots);
+    if (!slotNumber) {
+      return NextResponse.json({ message: "No slots available" }, { status: 400 });
     }
 
-    const slotCode = `P${nextSlotNumber}`;
+    if (isCar) {
+      parking.bookedSlotsOfCar.push(slotNumber);
+      parking.availableSlotsOfCar = totalSlots - parking.bookedSlotsOfCar.length;
+    } else {
+      parking.bookedSlotsOfBike.push(slotNumber);
+      parking.availableSlotsOfBike = totalSlots - parking.bookedSlotsOfBike.length;
+    }
 
-    const newBooking = new Booking({
+    const booking = await Booking.create({
       userId,
       parkingId: parking._id,
       placeName: parking.placeName,
       userName,
       phoneNumber,
       vehicleNumber,
-      vehicleType: type,
+      vehicleType,
       timeSlot,
-      slotNumber: slotCode,
+      slotNumber, 
     });
 
-    await newBooking.save();
     await parking.save();
-
-    const remaining =
-      type === "Car" ? parking.availableSlotsOfCar : parking.availableSlotsOfBike;
 
     return NextResponse.json(
       {
-        message: `${slotCode} slot is booked`,
-        bookingDetails: newBooking,
-        remainingSlots: remaining,
+        message: `Slot P${slotNumber} booked successfully`,
+        bookingDetails: {
+          placeName: booking.placeName,
+          userName: booking.userName,
+          phoneNumber: booking.phoneNumber,
+          vehicleNumber: booking.vehicleNumber,
+          vehicleType: booking.vehicleType,
+          timeSlot: booking.timeSlot,
+          slotNumber: booking.slotNumber,
+        },
+        remainingSlots: isCar ? parking.availableSlotsOfCar : parking.availableSlotsOfBike,
       },
       { status: 200 }
     );
-  } catch (error) {
-    console.error("Booking Error:", error.message);
+  } catch (err) {
+    console.error("Parking POST error:", err);
     return NextResponse.json({ message: "Internal Server Error" }, { status: 500 });
   }
 }
-

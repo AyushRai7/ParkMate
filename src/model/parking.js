@@ -1,42 +1,33 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
 const ParkingSchema = new mongoose.Schema({
   placeName: {
     type: String,
     required: true,
     unique: true,
-    set: (value) => value.toUpperCase(),
+    set: (v) => v.toUpperCase(),
   },
+
   totalSlotsOfCar: {
     type: Number,
     required: true,
   },
+
   totalSlotsOfBike: {
     type: Number,
     required: true,
   },
+
   bookedSlotsOfCar: {
     type: [Number],
     default: [],
   },
+
   bookedSlotsOfBike: {
     type: [Number],
     default: [],
   },
-  availableSlotsOfCar: {
-    type: Number,
-    required: true,
-    default: function () {
-      return this.totalSlotsOfCar - this.bookedSlotsOfCar.length;
-    },
-  },
-  availableSlotsOfBike: {
-    type: Number,
-    required: true,
-    default: function () {
-      return this.totalSlotsOfBike - this.bookedSlotsOfBike.length;
-    },
-  },
+
   ownerId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Owner",
@@ -44,5 +35,18 @@ const ParkingSchema = new mongoose.Schema({
   },
 });
 
-const Parking = mongoose.models.Parking || mongoose.model("Parking", ParkingSchema);
+ParkingSchema.virtual("availableSlotsOfCar").get(function () {
+  return this.totalSlotsOfCar - this.bookedSlotsOfCar.length;
+});
+
+ParkingSchema.virtual("availableSlotsOfBike").get(function () {
+  return this.totalSlotsOfBike - this.bookedSlotsOfBike.length;
+});
+
+ParkingSchema.set("toJSON", { virtuals: true });
+ParkingSchema.set("toObject", { virtuals: true });
+
+const Parking =
+  mongoose.models.Parking || mongoose.model("Parking", ParkingSchema);
+
 export default Parking;

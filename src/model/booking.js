@@ -27,7 +27,7 @@ const BookingSchema = new mongoose.Schema(
       required: true,
     },
     slotNumber: {
-      type: String,
+      type: Number,
       required: true,
     },
     placeName: {

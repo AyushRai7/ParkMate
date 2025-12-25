@@ -19,27 +19,42 @@ function InvoiceContent() {
   const invoiceRef = useRef(null);
 
   useEffect(() => {
-  const placeName = searchParams.get("placeName");
-  if (!placeName) return; 
+  // Get all query params
+  const placeNameParam = searchParams.get("placeName");
+  const userNameParam = searchParams.get("userName");
+  const phoneNumberParam = searchParams.get("phoneNumber");
+  const vehicleNumberParam = searchParams.get("vehicleNumber");
+  const vehicleTypeParam = searchParams.get("vehicleType");
+  const timeSlotParam = searchParams.get("timeSlot");
+  const spotsBookedParam = searchParams.get("slotNumber");
 
-  const params = {
-    placeName: placeName.toUpperCase(),
-    userName: searchParams.get("userName"),
-    phoneNumber: searchParams.get("phoneNumber"),
-    vehicleNumber: searchParams.get("vehicleNumber"),
-    vehicleType: searchParams.get("vehicleType"),
-    timeSlot: searchParams.get("timeSlot"),
-    spotNumber: searchParams.get("spotsBooked"),
-  };
-
-  if (Object.values(params).some((val) => !val)) {
+  if (!placeNameParam) {
     toast.error("Missing booking details.");
     router.push("/booking");
     return;
   }
 
+  const params = {
+    placeName: placeNameParam.toUpperCase(),
+    userName: userNameParam,
+    phoneNumber: phoneNumberParam,
+    vehicleNumber: vehicleNumberParam,
+    vehicleType: vehicleTypeParam,
+    timeSlot: timeSlotParam,
+    spotNumber: spotsBookedParam, // This matches what booking page sends
+  };
+
+  // Check if any value is missing
+  const missingField = Object.entries(params).find(([key, val]) => !val);
+  if (missingField) {
+    toast.error(`Missing booking detail: ${missingField[0]}`);
+    router.push("/booking");
+    return;
+  }
+
   setBookingDetails(params);
-}, [searchParams]);
+}, [searchParams, router]);
+
 
 
   const downloadInvoice = async () => {

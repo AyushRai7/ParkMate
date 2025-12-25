@@ -6,172 +6,155 @@ import "react-toastify/dist/ReactToastify.css";
 
 export default function Booking() {
   const [placeName, setPlaceName] = useState("");
-  const [spotsToBook, setSpotsToBook] = useState(1);
-  const [availableSlotsOfCar, setAvailableSlotsOfCar] = useState(null);
-  const [availableSlotsOfBike, setAvailableSlotsOfBike] = useState(null);
-  const [totalCarSlots, setTotalCarSlots] = useState(null);
-  const [totalBikeSlots, setTotalBikeSlots] = useState(null);
-  const [userName, setUserName] = useState("");
-  const [phoneNumber, setPhoneNumber] = useState("");
-  const [vehicleNumber, setVehicleNumber] = useState("");
-  const [vehicleType, setVehicleType] = useState("Car");
-  const [timeSlot, setTimeSlot] = useState("10 AM - 12 PM");
+const [availableSlotsOfCar, setAvailableSlotsOfCar] = useState(null);
+const [availableSlotsOfBike, setAvailableSlotsOfBike] = useState(null);
 
-  const router = useRouter();
+const [userName, setUserName] = useState("");
+const [phoneNumber, setPhoneNumber] = useState("");
+const [vehicleNumber, setVehicleNumber] = useState("");
+const [vehicleType, setVehicleType] = useState("Car");
+const [timeSlot, setTimeSlot] = useState("10 AM - 12 PM");
 
-  useEffect(() => {
-    if (
-      totalCarSlots !== null &&
-      totalBikeSlots !== null &&
-      availableSlotsOfCar !== null &&
-      availableSlotsOfBike !== null
-    ) {
-      if (vehicleType === "Car") {
-        const nextCarSpot = totalCarSlots - availableSlotsOfCar + 1;
-        setSpotsToBook(nextCarSpot > 0 ? nextCarSpot : 1);
-      } else {
-        const nextBikeSpot = totalBikeSlots - availableSlotsOfBike + 1;
-        setSpotsToBook(nextBikeSpot > 0 ? nextBikeSpot : 1);
-      }
-    } else {
-      setSpotsToBook(1);
-    }
-  }, [
-    vehicleType,
-    totalCarSlots,
-    totalBikeSlots,
-    availableSlotsOfCar,
-    availableSlotsOfBike,
-  ]);
 
-  const searchVenue = async () => {
-    if (!placeName.trim()) {
-      toast.error("Please enter a venue name");
-      return;
-    }
-    try {
-      const res = await fetch(
-        `/api/parking?placeName=${encodeURIComponent(placeName)}`
-      );
-      const data = await res.json();
+const searchVenue = async () => {
+  if (!placeName.trim()) {
+    toast.error("Please enter a venue name");
+    return;
+  }
 
-      if (res.ok) {
-        setAvailableSlotsOfCar(data.availableSlotsOfCar);
-        setAvailableSlotsOfBike(data.availableSlotsOfBike);
-        setTotalCarSlots(data.totalSlotsOfCar);
-        setTotalBikeSlots(data.totalSlotsOfBike);
-        toast.success("Venue found! Check available spots.");
-      } else {
-        toast.error(data.message || "Venue not found.");
-        setAvailableSlotsOfCar(null);
-        setAvailableSlotsOfBike(null);
-        setTotalCarSlots(null);
-        setTotalBikeSlots(null);
-        setSpotsToBook(1);
-      }
-    } catch (error) {
-      toast.error("Failed to fetch venue information. Try again.");
-      console.error(error);
-    }
-  };
+  try {
+    const res = await fetch(
+      `/api/parking?placeName=${encodeURIComponent(placeName)}`
+    );
+    const data = await res.json();
 
-  const handlePhoneNumberChange = (e) => {
-    const value = e.target.value;
-    if (!/^\d*$/.test(value)) return;
-    setPhoneNumber(value);
-  };
-
-  const handleBookingAndPayment = async () => {
-    if (
-      !placeName ||
-      !userName ||
-      !phoneNumber ||
-      !vehicleNumber ||
-      !vehicleType ||
-      !timeSlot
-    ) {
-      toast.warning("All fields are required.");
-      return;
-    }
-    if (!/^[1-9]\d{9}$/.test(phoneNumber)) {
-      toast.error("Invalid phone number.");
+    if (!res.ok) {
+      toast.error(data.message || "Venue not found");
+      setAvailableSlotsOfCar(null);
+      setAvailableSlotsOfBike(null);
       return;
     }
 
-    const currentAvailable =
-      vehicleType === "Car" ? availableSlotsOfCar : availableSlotsOfBike;
+    setAvailableSlotsOfCar(data.availableSlotsOfCar);
+    setAvailableSlotsOfBike(data.availableSlotsOfBike);
 
-    if (currentAvailable < 1) {
-      toast.info(`No available ${vehicleType.toLowerCase()} spots.`);
-      return;
-    }
+    toast.success("Venue found! Check available spots.");
+  } catch (error) {
+    toast.error("Failed to fetch venue information");
+    console.error(error);
+  }
+};
 
-    const amount = vehicleType === "Car" ? 100 : 50;
+const handlePhoneNumberChange = (e) => {
+  const value = e.target.value;
+  if (!/^\d*$/.test(value)) return;
+  setPhoneNumber(value);
+};
 
-    try {
-      const res = await fetch(`/api/parking`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          placeName,
-          userName,
-          phoneNumber,
-          vehicleNumber,
-          vehicleType,
-          timeSlot,
-        }),
-      });
+const currentAvailable =
+    vehicleType === "Car" ? availableSlotsOfCar : availableSlotsOfBike;
 
-      const data = await res.json();
+const handleBookingAndPayment = async () => {
+  if (
+    !placeName ||
+    !userName ||
+    !phoneNumber ||
+    !vehicleNumber ||
+    !vehicleType ||
+    !timeSlot
+  ) {
+    toast.warning("All fields are required.");
+    return;
+  }
 
-      if (!res.ok) {
-        toast.error(data.message || "Booking failed");
-        return;
-      }
+  if (!/^[1-9]\d{9}$/.test(phoneNumber)) {
+    toast.error("Invalid phone number.");
+    return;
+  }
 
-      if (vehicleType === "Car") setAvailableSlotsOfCar(data.remainingSlots);
-      else setAvailableSlotsOfBike(data.remainingSlots);
+  
 
-      toast.success(`Spot P${spotsToBook} booked! Proceed to payment...`, {
-        autoClose: 2000,
-      });
+  if (currentAvailable < 1) {
+    toast.info(`No available ${vehicleType.toLowerCase()} spots.`);
+    return;
+  }
 
-      const queryParams = {
+  const amount = vehicleType === "Car" ? 100 : 50;
+
+  try {
+    const res = await fetch("/api/parking", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
         placeName,
         userName,
         phoneNumber,
         vehicleNumber,
         vehicleType,
         timeSlot,
-        spotsBooked: spotsToBook,
-      };
+      }),
+    });
 
-      const paymentRes = await fetch("/api/payment", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount, params: queryParams }),
-      });
+    const data = await res.json();
 
-      const paymentData = await paymentRes.json();
-      if (paymentData.url) window.location.href = paymentData.url;
-      else toast.error("Failed to start payment process");
-    } catch (error) {
-      toast.error("Something went wrong. Try again.");
-      console.error(error);
+    if (!res.ok) {
+      toast.error(data.message || "Booking failed");
+      return;
     }
-  };
 
-  const currentAvailable =
-    vehicleType === "Car" ? availableSlotsOfCar : availableSlotsOfBike;
-
-  const handleFormSubmit = async (e) => {
-    e.preventDefault();
-    if (placeName.trim() && (availableSlotsOfCar !== null || availableSlotsOfBike !== null)) {
-      handleBookingAndPayment();
+    if (vehicleType === "Car") {
+      setAvailableSlotsOfCar(data.remainingSlots);
     } else {
-      searchVenue();
+      setAvailableSlotsOfBike(data.remainingSlots);
     }
-  };
+
+    toast.success(`Spot P${data.bookingDetails.slotNumber} booked!`, {
+      autoClose: 2000,
+    });
+
+    const paymentRes = await fetch("/api/payment", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        amount,
+        params: {
+          placeName,
+          userName,
+          phoneNumber,
+          vehicleNumber,
+          vehicleType,
+          timeSlot,
+          slotNumber: data.bookingDetails.slotNumber, 
+        },
+      }),
+    });
+
+    const paymentData = await paymentRes.json();
+
+    if (paymentData.url) {
+      window.location.href = paymentData.url;
+    } else {
+      toast.error("Failed to start payment");
+    }
+  } catch (error) {
+    toast.error("Something went wrong");
+    console.error(error);
+  }
+};
+
+const handleFormSubmit = (e) => {
+  e.preventDefault();
+
+  if (
+    placeName.trim() &&
+    (availableSlotsOfCar !== null || availableSlotsOfBike !== null)
+  ) {
+    handleBookingAndPayment();
+  } else {
+    searchVenue();
+  }
+};
+
 
   return (
     <div className="flex justify-center items-center min-h-screen px-4 bg-gray-50">
@@ -182,7 +165,6 @@ export default function Booking() {
         </h1>
 
         <form onSubmit={handleFormSubmit} className="space-y-4">
-          {/* Venue input */}
           <div>
             <input
               type="text"
@@ -206,13 +188,6 @@ export default function Booking() {
                 Available {vehicleType} Spots:{" "}
                 <span className="font-semibold">{currentAvailable}</span>
               </p>
-
-              <input
-                type="text"
-                value={`P${spotsToBook}`}
-                readOnly
-                className="w-full border rounded-md px-3 py-2 bg-gray-100"
-              />
 
               <input
                 type="text"

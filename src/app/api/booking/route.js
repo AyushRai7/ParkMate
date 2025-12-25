@@ -5,6 +5,14 @@ import jwt from "jsonwebtoken";
 import { cookies } from "next/headers";
 import mongoose from "mongoose";
 
+function getNextAvailableSpot(totalSlots, bookedSlots) {
+  const used = new Set(bookedSlots);
+  for (let i = 1; i <= totalSlots; i++) {
+    if (!used.has(i)) return i;
+  }
+  return null;
+}
+
 export async function GET(req) {
   try {
     await connectDb();
@@ -18,44 +26,31 @@ export async function GET(req) {
     if (userId) {
       bookings = await Booking.find({ userId });
     } else if (venueNames.length > 0) {
-      bookings = await Booking.find({
-        placeName: { $in: venueNames },
-      });
+      bookings = await Booking.find({ placeName: { $in: venueNames } });
     } else {
-      return new Response(
-        JSON.stringify({ message: "Missing query parameters" }),
-        {
-          status: 400,
-        }
+      return Response.json(
+        { message: "Missing query parameters" },
+        { status: 400 }
       );
     }
 
-    if (!bookings.length) {
-      return new Response(JSON.stringify({ message: "No bookings found" }), {
-        status: 404,
-      });
-    }
-
-    return new Response(JSON.stringify({ bookings }), { status: 200 });
-  } catch (error) {
-    console.error("Error in GET /api/booking:", error);
-    return new Response(JSON.stringify({ message: "Internal Server Error" }), {
-      status: 500,
-    });
+    return Response.json({ bookings }, { status: 200 });
+  } catch (err) {
+    console.error("GET /booking error:", err);
+    return Response.json({ message: "Server error" }, { status: 500 });
   }
 }
 
 export async function POST(req) {
+  await connectDb();
+
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
   try {
-    await connectDb();
-
-    const cookieStore = await cookies();
-    const token = cookieStore.get("userToken")?.value;
-
+    const token = cookies().get("userToken")?.value;
     if (!token) {
-      return new Response(JSON.stringify({ message: "Unauthorized" }), {
-        status: 401,
-      });
+      return Response.json({ message: "Unauthorized" }, { status: 401 });
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
@@ -70,124 +65,120 @@ export async function POST(req) {
       timeSlot,
     } = await req.json();
 
-    const parking = await Parking.findOne({ placeName });
+    const parking = await Parking.findOne({ placeName }).session(session);
     if (!parking) {
-      return new Response(JSON.stringify({ message: "Venue not found" }), {
-        status: 404,
-      });
+      return Response.json({ message: "Venue not found" }, { status: 404 });
     }
 
-    if (
-      (vehicleType === "Car" && parking.availableSlotsOfCar < 1) ||
-      (vehicleType === "Bike" && parking.availableSlotsOfBike < 1)
-    ) {
-      return new Response(
-        JSON.stringify({ message: `No available ${vehicleType} spots` }),
+    const isCar = vehicleType === "Car";
+
+    const totalSlots = isCar
+      ? parking.totalSlotsOfCar
+      : parking.totalSlotsOfBike;
+
+    const bookedSlots = isCar
+      ? [...parking.bookedSlotsOfCar]
+      : [...parking.bookedSlotsOfBike];
+
+    const spotNumber = getNextAvailableSpot(totalSlots, bookedSlots);
+
+    if (!spotNumber) {
+      return Response.json(
+        { message: "No slots available" },
         { status: 400 }
       );
     }
 
-    // Update available slots
-    if (vehicleType === "Car") {
-      parking.availableSlotsOfCar -= 1;
+    if (isCar) {
+      parking.bookedSlotsOfCar.push(spotNumber);
     } else {
-      parking.availableSlotsOfBike -= 1;
+      parking.bookedSlotsOfBike.push(spotNumber);
     }
 
-    await parking.save();
+    await parking.save({ session });
 
-    const totalSlots =
-      vehicleType === "Car"
-        ? parking.totalSlotsOfCar
-        : parking.totalSlotsOfBike;
-    const availableSlots =
-      vehicleType === "Car"
-        ? parking.availableSlotsOfCar
-        : parking.availableSlotsOfBike;
+    await Booking.create(
+      [
+        {
+          userId,
+          parkingId: parking._id,
+          placeName,
+          userName,
+          phoneNumber,
+          vehicleNumber,
+          vehicleType,
+          timeSlot,
+          slotNumber: spotNumber, 
+        },
+      ],
+      { session }
+    );
 
-    const spotsBooked = totalSlots - availableSlots;
+    await session.commitTransaction();
 
-    const newBooking = new Booking({
-      userId,
-      placeName,
-      userName,
-      phoneNumber,
-      vehicleNumber,
-      vehicleType,
-      timeSlot,
-      parkingId: parking._id,
-      spotsBooked,
-    });
-
-    await newBooking.save();
-
-    return new Response(
-      JSON.stringify({
-        message: "Spot booked successfully",
-        remainingSlots:
-          vehicleType === "Car"
-            ? parking.availableSlotsOfCar
-            : parking.availableSlotsOfBike,
-      }),
+    return Response.json(
+      {
+        message: "Booking successful",
+        slotNumber: spotNumber,
+        remainingSlots: totalSlots - bookedSlots.length - 1,
+      },
       { status: 201 }
     );
-  } catch (error) {
-    console.error("Error in POST booking:", error);
-    return new Response(JSON.stringify({ message: "Internal Server Error" }), {
-      status: 500,
-    });
+  } catch (err) {
+    await session.abortTransaction();
+    console.error("POST /booking error:", err);
+    return Response.json({ message: "Booking failed" }, { status: 500 });
+  } finally {
+    session.endSession();
   }
 }
 
 export async function DELETE(req) {
+  await connectDb();
+
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
   try {
-    await connectDb();
+    const bookingId = new URL(req.url).searchParams.get("bookingId");
 
-    const { searchParams } = new URL(req.url);
-    const bookingId = searchParams.get("bookingId");
-
-    if (!bookingId || !mongoose.Types.ObjectId.isValid(bookingId)) {
-      return new Response(
-        JSON.stringify({ message: "Valid booking ID is required" }),
-        {
-          status: 400,
-          headers: { "Content-Type": "application/json" },
-        }
-      );
+    if (!mongoose.Types.ObjectId.isValid(bookingId)) {
+      return Response.json({ message: "Invalid booking ID" }, { status: 400 });
     }
 
-    const booking = await Booking.findById(bookingId);
+    const booking = await Booking.findById(bookingId).session(session);
     if (!booking) {
-      return new Response(JSON.stringify({ message: "Booking not found" }), {
-        status: 404,
-        headers: { "Content-Type": "application/json" },
-      });
+      return Response.json({ message: "Booking not found" }, { status: 404 });
     }
 
-    const parking = await Parking.findById(booking.parkingId);
+    const parking = await Parking.findById(booking.parkingId).session(session);
+
     if (parking) {
       if (booking.vehicleType === "Car") {
-        parking.availableCarSlots += booking.spotsBooked;
-      } else if (booking.vehicleType === "Bike") {
-        parking.availableBikeSlots += booking.spotsBooked;
+        parking.bookedSlotsOfCar = parking.bookedSlotsOfCar.filter(
+          (s) => s !== booking.slotNumber
+        );
+      } else {
+        parking.bookedSlotsOfBike = parking.bookedSlotsOfBike.filter(
+          (s) => s !== booking.slotNumber
+        );
       }
-      await parking.save();
+
+      await parking.save({ session });
     }
 
-    await booking.deleteOne();
+    await booking.deleteOne({ session });
+    await session.commitTransaction();
 
-    return new Response(
-      JSON.stringify({ message: "Booking cancelled successfully" }),
-      {
-        status: 200,
-        headers: { "Content-Type": "application/json" },
-      }
+    return Response.json(
+      { message: "Booking cancelled successfully" },
+      { status: 200 }
     );
-  } catch (error) {
-    console.error("Error in DELETE /api/booking:", error.message);
-    return new Response(JSON.stringify({ message: "Internal Server Error" }), {
-      status: 500,
-      headers: { "Content-Type": "application/json" },
-    });
+  } catch (err) {
+    await session.abortTransaction();
+    console.error("DELETE /booking error:", err);
+    return Response.json({ message: "Cancel failed" }, { status: 500 });
+  } finally {
+    session.endSession();
   }
 }
