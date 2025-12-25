@@ -5,31 +5,6 @@ import logo from "../assets/logo.png";
 import footer_logo_name from "../assets/footer_logo_name.png";
 
 const FooterSection = () => {
-    const handleScroll = (e) => {
-    e.preventDefault();
-    const aboutSection = document.getElementById("about-section");
-
-    if (aboutSection) {
-      const yOffset = -100;
-      const y =
-        aboutSection.getBoundingClientRect().top + window.scrollY + yOffset;
-
-      window.scrollTo({
-        top: y,
-        behavior: "smooth",
-      });
-
-      setTimeout(() => {
-        const rect = aboutSection.getBoundingClientRect();
-        if (rect.bottom > window.innerHeight) {
-          window.scrollTo({
-            top: window.scrollY + rect.bottom - window.innerHeight + 20,
-            behavior: "smooth",
-          });
-        }
-      }, 500);
-    }
-  };
 
   return (
     <div className="w-full mt-12">
@@ -148,7 +123,6 @@ const FooterSection = () => {
             <Link
               href="#"
               className="mb-2 hover:text-red-700"
-              onClick={handleScroll}
             >
               About Parkmate
             </Link>
