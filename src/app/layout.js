@@ -1,5 +1,5 @@
 import { Noto_Sans } from 'next/font/google';
-import { Toaster } from 'react-hot-toast'; // Import Toaster for toast notifications
+import { Toaster } from 'react-hot-toast';
 import './globals.css';
 
 // Import Noto Sans font
@@ -18,7 +18,7 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body className={`${notoSans.variable} antialiased`}>
-        <Toaster position="top-right" reverseOrder={false} /> {/* Ensure toast is globally available */}
+        <Toaster position="top-right" reverseOrder={false} /> 
         {children}
       </body>
     </html>
