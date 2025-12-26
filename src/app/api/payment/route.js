@@ -4,11 +4,17 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 export async function POST(req) {
   try {
-    const { amount, params } = await req.json();
+    const { amount, bookingId, vehicleType } = await req.json();
+    if (!bookingId || !amount) {
+      return new Response(
+        JSON.stringify({ error: "Missing bookingId or amount" }),
+        { status: 400 }
+      );
+    }
 
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL; // ✅ must include http/https
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL; 
 
-    const successUrl = `${baseUrl}/invoice?${new URLSearchParams(params).toString()}`;
+    const successUrl = `${baseUrl}/invoice?bookingId=${bookingId}`;
     const cancelUrl = `${baseUrl}/booking`;
 
     const session = await stripe.checkout.sessions.create({
@@ -19,9 +25,9 @@ export async function POST(req) {
           price_data: {
             currency: "inr",
             product_data: {
-              name: `Parking Spot - ${params.vehicleType}`,
+              name: `Parking Spot - ${vehicleType}`,
             },
-            unit_amount: amount * 100, // amount in paise
+            unit_amount: amount * 100, 
           },
           quantity: 1,
         },

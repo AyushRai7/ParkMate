@@ -27,6 +27,7 @@ const ParkingSchema = new mongoose.Schema({
     type: [Number],
     default: [],
   },
+  
 
   ownerId: {
     type: mongoose.Schema.Types.ObjectId,

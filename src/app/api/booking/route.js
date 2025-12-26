@@ -42,12 +42,9 @@ export async function GET(req) {
 }
 
 export async function POST(req) {
-  await connectDb();
-
-  const session = await mongoose.startSession();
-  session.startTransaction();
-
   try {
+    await connectDb();
+
     const token = cookies().get("userToken")?.value;
     if (!token) {
       return Response.json({ message: "Unauthorized" }, { status: 401 });
@@ -62,10 +59,16 @@ export async function POST(req) {
       phoneNumber,
       vehicleNumber,
       vehicleType,
-      timeSlot,
     } = await req.json();
 
-    const parking = await Parking.findOne({ placeName }).session(session);
+    if (!placeName || !userName || !phoneNumber || !vehicleNumber || !vehicleType) {
+      return Response.json({ message: "All fields required" }, { status: 400 });
+    }
+
+    const parking = await Parking.findOne({
+      placeName: placeName.trim().toUpperCase(),
+    });
+
     if (!parking) {
       return Response.json({ message: "Venue not found" }, { status: 404 });
     }
@@ -77,61 +80,40 @@ export async function POST(req) {
       : parking.totalSlotsOfBike;
 
     const bookedSlots = isCar
-      ? [...parking.bookedSlotsOfCar]
-      : [...parking.bookedSlotsOfBike];
+      ? parking.bookedSlotsOfCar
+      : parking.bookedSlotsOfBike;
 
-    const spotNumber = getNextAvailableSpot(totalSlots, bookedSlots);
+    const slotNumber = getNextAvailableSpot(totalSlots, bookedSlots);
 
-    if (!spotNumber) {
-      return Response.json(
-        { message: "No slots available" },
-        { status: 400 }
-      );
+    if (!slotNumber) {
+      return Response.json({ message: "No slots available" }, { status: 400 });
     }
 
-    if (isCar) {
-      parking.bookedSlotsOfCar.push(spotNumber);
-    } else {
-      parking.bookedSlotsOfBike.push(spotNumber);
-    }
-
-    await parking.save({ session });
-
-    await Booking.create(
-      [
-        {
-          userId,
-          parkingId: parking._id,
-          placeName,
-          userName,
-          phoneNumber,
-          vehicleNumber,
-          vehicleType,
-          timeSlot,
-          slotNumber: spotNumber, 
-        },
-      ],
-      { session }
-    );
-
-    await session.commitTransaction();
+    const booking = await Booking.create({
+      userId,
+      parkingId: parking._id,
+      placeName: parking.placeName,
+      userName,
+      phoneNumber,
+      vehicleNumber,
+      vehicleType,
+      slotNumber,
+      status: "PENDING",
+    });
 
     return Response.json(
       {
-        message: "Booking successful",
-        slotNumber: spotNumber,
-        remainingSlots: totalSlots - bookedSlots.length - 1,
+        bookingId: booking._id,
+        amount: vehicleType === "Car" ? 100 : 50,
       },
       { status: 201 }
     );
   } catch (err) {
-    await session.abortTransaction();
     console.error("POST /booking error:", err);
     return Response.json({ message: "Booking failed" }, { status: 500 });
-  } finally {
-    session.endSession();
   }
 }
+
 
 export async function DELETE(req) {
   await connectDb();

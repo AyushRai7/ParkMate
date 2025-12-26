@@ -14,47 +14,55 @@ import { ArrowLeft } from "lucide-react";
 
 function InvoiceContent() {
   const [bookingDetails, setBookingDetails] = useState(null);
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const invoiceRef = useRef(null);
+const router = useRouter();
+const searchParams = useSearchParams();
+const invoiceRef = useRef(null);
 
-  useEffect(() => {
-  // Get all query params
-  const placeNameParam = searchParams.get("placeName");
-  const userNameParam = searchParams.get("userName");
-  const phoneNumberParam = searchParams.get("phoneNumber");
-  const vehicleNumberParam = searchParams.get("vehicleNumber");
-  const vehicleTypeParam = searchParams.get("vehicleType");
-  const timeSlotParam = searchParams.get("timeSlot");
-  const spotsBookedParam = searchParams.get("slotNumber");
+const bookingId = searchParams.get("bookingId");
 
-  if (!placeNameParam) {
-    toast.error("Missing booking details.");
+useEffect(() => {
+  if (!bookingId) {
+    toast.error("Invalid invoice");
     router.push("/booking");
     return;
   }
 
-  const params = {
-    placeName: placeNameParam.toUpperCase(),
-    userName: userNameParam,
-    phoneNumber: phoneNumberParam,
-    vehicleNumber: vehicleNumberParam,
-    vehicleType: vehicleTypeParam,
-    timeSlot: timeSlotParam,
-    spotNumber: spotsBookedParam, // This matches what booking page sends
+  const confirmAndFetch = async () => {
+    try {
+      const confirmRes = await fetch("/api/confirmation", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ bookingId }),
+      });
+
+      const confirmData = await confirmRes.json();
+
+      if (!confirmRes.ok) {
+        toast.error(confirmData.message || "Booking confirmation failed");
+        router.push("/booking");
+        return;
+      }
+
+      const res = await fetch(`/api/booking/${bookingId}`);
+      if (!res.ok) {
+        toast.error("Failed to load invoice");
+        router.push("/booking");
+        return;
+      }
+
+      const data = await res.json();
+      setBookingDetails(data);
+
+      toast.success(`Spot P${data.slotNumber} booked successfully!`);
+    } catch (err) {
+      console.error(err);
+      toast.error("Something went wrong");
+      router.push("/booking");
+    }
   };
 
-  // Check if any value is missing
-  const missingField = Object.entries(params).find(([key, val]) => !val);
-  if (missingField) {
-    toast.error(`Missing booking detail: ${missingField[0]}`);
-    router.push("/booking");
-    return;
-  }
-
-  setBookingDetails(params);
-}, [searchParams, router]);
-
+  confirmAndFetch();
+}, [bookingId, router]);
 
 
   const downloadInvoice = async () => {
@@ -67,9 +75,6 @@ function InvoiceContent() {
     const pdf = new jsPDF();
     pdf.addImage(imgData, "PNG", 10, 10, 190, 0);
     pdf.save("Invoice.pdf");
-
-    toast.success("Invoice downloaded!");
-    setTimeout(() => router.push("/homepage"), 2000);
   };
 
   return (
@@ -100,8 +105,7 @@ function InvoiceContent() {
             <p><strong>Phone Number:</strong> {bookingDetails.phoneNumber}</p>
             <p><strong>Vehicle Number:</strong> {bookingDetails.vehicleNumber}</p>
             <p><strong>Vehicle Type:</strong> {bookingDetails.vehicleType}</p>
-            <p><strong>Time Slot:</strong> {bookingDetails.timeSlot}</p>
-            <p><strong>Spot Number:</strong> P{bookingDetails.spotNumber}</p>
+            <p><strong>Spot Number:</strong> P{bookingDetails.slotNumber}</p>
 
             <button
               onClick={downloadInvoice}
@@ -116,7 +120,7 @@ function InvoiceContent() {
       </div>
 
       <button
-        onClick={() => router.push("/homepage")}
+         onClick={() => router.push("/homepage")}
         className="fixed top-6 left-6 flex items-center gap-2 text-blue-600 hover:text-blue-800 font-medium"
       >
         <ArrowLeft size={18} />

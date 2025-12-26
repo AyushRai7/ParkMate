@@ -1,20 +1,20 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
 const BookingSchema = new mongoose.Schema(
   {
     userId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
+      ref: "User",
       required: true,
     },
     parkingId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Parking',
+      ref: "Parking",
       required: true,
     },
     vehicleType: {
       type: String,
-      enum: ['Car', 'Bike'],
+      enum: ["Car", "Bike"],
       required: true,
     },
     vehicleNumber: {
@@ -22,31 +22,32 @@ const BookingSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
-    timeSlot: {
-      type: String,
-      required: true,
-    },
     slotNumber: {
       type: Number,
-      required: true,
+      default: null, 
     },
     placeName: {
       type: String,
-      required: true, 
+      required: true,
       trim: true,
     },
-    userName: {
+    userName: String,
+    phoneNumber: String,
+    status: {
       type: String,
+      enum: ["PENDING", "CONFIRMED", "CANCELLED", "EXPIRED"],
+      default: "PENDING",
     },
-    phoneNumber: {
-      type: String,
-    },
-    spotsBooked: {
-      type: Number,
+    expiresAt: {
+      type: Date,
+      required: true,
+      index: { expires: 0 },
     },
   },
   { timestamps: true }
 );
 
-const Booking = mongoose.models.Booking || mongoose.model('Booking', BookingSchema);
+
+const Booking =
+  mongoose.models.Booking || mongoose.model("Booking", BookingSchema);
 export default Booking;

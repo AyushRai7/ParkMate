@@ -1,11 +1,10 @@
 "use client";
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 export default function Booking() {
-  const [placeName, setPlaceName] = useState("");
+const [placeName, setPlaceName] = useState("");
 const [availableSlotsOfCar, setAvailableSlotsOfCar] = useState(null);
 const [availableSlotsOfBike, setAvailableSlotsOfBike] = useState(null);
 
@@ -13,7 +12,7 @@ const [userName, setUserName] = useState("");
 const [phoneNumber, setPhoneNumber] = useState("");
 const [vehicleNumber, setVehicleNumber] = useState("");
 const [vehicleType, setVehicleType] = useState("Car");
-const [timeSlot, setTimeSlot] = useState("10 AM - 12 PM");
+const [venueFound, setVenueFound] = useState(false);
 
 
 const searchVenue = async () => {
@@ -30,14 +29,13 @@ const searchVenue = async () => {
 
     if (!res.ok) {
       toast.error(data.message || "Venue not found");
-      setAvailableSlotsOfCar(null);
-      setAvailableSlotsOfBike(null);
+      setVenueFound(false);
       return;
     }
 
     setAvailableSlotsOfCar(data.availableSlotsOfCar);
     setAvailableSlotsOfBike(data.availableSlotsOfBike);
-
+    setVenueFound(true);
     toast.success("Venue found! Check available spots.");
   } catch (error) {
     toast.error("Failed to fetch venue information");
@@ -60,8 +58,7 @@ const handleBookingAndPayment = async () => {
     !userName ||
     !phoneNumber ||
     !vehicleNumber ||
-    !vehicleType ||
-    !timeSlot
+    !vehicleType 
   ) {
     toast.warning("All fields are required.");
     return;
@@ -91,7 +88,6 @@ const handleBookingAndPayment = async () => {
         phoneNumber,
         vehicleNumber,
         vehicleType,
-        timeSlot,
       }),
     });
 
@@ -108,24 +104,13 @@ const handleBookingAndPayment = async () => {
       setAvailableSlotsOfBike(data.remainingSlots);
     }
 
-    toast.success(`Spot P${data.bookingDetails.slotNumber} booked!`, {
-      autoClose: 2000,
-    });
-
     const paymentRes = await fetch("/api/payment", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         amount,
-        params: {
-          placeName,
-          userName,
-          phoneNumber,
-          vehicleNumber,
-          vehicleType,
-          timeSlot,
-          slotNumber: data.bookingDetails.slotNumber, 
-        },
+        bookingId: data.bookingId,
+        vehicleType,
       }),
     });
 
@@ -155,7 +140,6 @@ const handleFormSubmit = (e) => {
   }
 };
 
-
   return (
     <div className="flex justify-center items-center min-h-screen px-4 bg-gray-50">
       <ToastContainer position="top-right" />
@@ -182,7 +166,7 @@ const handleFormSubmit = (e) => {
             </button>
           </div>
 
-          {currentAvailable !== null && (
+          {venueFound && (
             <>
               <p className="text-gray-700">
                 Available {vehicleType} Spots:{" "}
@@ -221,17 +205,6 @@ const handleFormSubmit = (e) => {
               >
                 <option value="Car">Car</option>
                 <option value="Bike">Bike</option>
-              </select>
-
-              <select
-                value={timeSlot}
-                onChange={(e) => setTimeSlot(e.target.value)}
-                className="w-full border rounded-md px-3 py-2"
-              >
-                <option value="10 AM - 12 PM">10 AM - 12 PM</option>
-                <option value="12 PM - 2 PM">12 PM - 2 PM</option>
-                <option value="2 PM - 4 PM">2 PM - 4 PM</option>
-                <option value="4 PM - 6 PM">4 PM - 6 PM</option>
               </select>
 
               <p className="text-sm text-gray-600">
