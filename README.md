@@ -1,4 +1,4 @@
-# 🚗 ParkMate — Smart Parking Reservation Platform
+# 🚗 ParkMate — Parking Reservation Platform
 
 ParkMate is a full-stack parking reservation platform that allows users to search and book parking slots in advance, while enabling parking owners to manage venues and availability.  
 The project solves a real-world urban problem, parking unavailability, and is built with production-grade authentication, payments, and booking workflows.
