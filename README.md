@@ -52,12 +52,11 @@ The project solves a real-world urban problem, parking unavailability, and is bu
 ## 🛠️ Tech Stack
 
 **Frontend**
-- Next.js
+- Next.js (TypeScript)
 - Tailwind CSS
 
 **Backend**
 - Node.js
-- Express.js
 - MongoDB
 - JWT Authentication
 - Stripe API
