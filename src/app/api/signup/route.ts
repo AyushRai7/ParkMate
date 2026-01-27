@@ -1,18 +1,19 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import User from "@/model/user.js";
+import User from "@/model/user";
 import Connection from "@/database/connection";
 import { serialize } from "cookie";
+import { NextResponse, NextRequest } from "next/server";
 
 Connection();
 
-export const POST = async (req) => {
+export const POST = async (req: NextRequest) => {
   try {
     const body = await req.json();
     const { name, email, password, phone } = body;
 
     if (!name || !email || !password || !phone) {
-      return new Response(
+      return NextResponse.json(
         JSON.stringify({ message: "All fields are required" }),
         { status: 400 }
       );
@@ -21,7 +22,7 @@ export const POST = async (req) => {
     // Check if user already exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      return new Response(
+      return NextResponse.json(
         JSON.stringify({ message: "Email already in use" }),
         { status: 409 }
       );
@@ -55,8 +56,8 @@ export const POST = async (req) => {
       path: "/",
     });
 
-    return new Response(
-      JSON.stringify({ message: "Signup successful", success: true }),
+    return NextResponse.json(
+      { message: "Signup successful", success: true },
       {
         status: 201,
         headers: {
@@ -67,7 +68,7 @@ export const POST = async (req) => {
     );
   } catch (error) {
     console.error("Signup Error:", error);
-    return new Response(
+    return NextResponse.json(
       JSON.stringify({ message: "Internal Server Error" }),
       { status: 500 }
     );

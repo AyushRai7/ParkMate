@@ -1,19 +1,20 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import Owner from "@/model/owner.js";
+import Owner from "@/model/owner";
 import Connection from "@/database/connection";
 import { serialize } from "cookie";
+import { NextResponse, NextRequest } from "next/server";
 
 Connection();
 
-export const POST = async (req) => {
+export const POST = async (req: NextRequest) => {
   try {
     const body = await req.json();
     const { name, email, password, phone } = body;
 
     // Validate required fields
     if (!name || !email || !password || !phone) {
-      return new Response(
+      return NextResponse.json(
         JSON.stringify({ message: "All fields are required" }),
         { status: 400 }
       );
@@ -23,7 +24,7 @@ export const POST = async (req) => {
     const existingOwner = await Owner.findOne({ email });
 
     if (existingOwner) {
-      return new Response(
+      return NextResponse.json(
         JSON.stringify({ message: "Email already in use" }),
         { status: 409 }
       );
@@ -60,7 +61,7 @@ export const POST = async (req) => {
       path: "/",
     });
 
-    return new Response(
+    return NextResponse.json(
       JSON.stringify({ message: "Signup successful" }),
       {
         status: 201,
@@ -72,7 +73,7 @@ export const POST = async (req) => {
     );
   } catch (error) {
     console.error("Signup Error:", error);
-    return new Response(
+    return NextResponse.json(
       JSON.stringify({ message: "Internal Server Error" }),
       { status: 500 }
     );

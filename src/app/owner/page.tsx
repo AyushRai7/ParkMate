@@ -1,8 +1,29 @@
 "use client";
-import { useEffect, useState } from "react";
+
+import React, { useEffect, useState, useCallback } from "react";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { SlidersHorizontal } from "lucide-react";
+
+/* ================= TYPES ================= */
+
+interface Booking {
+  _id: string;
+  userName: string;
+  placeName: string;
+  vehicleType: string;
+  slotNumber: string;
+  vehicleNumber: string;
+}
+
+interface Venue {
+  _id: string;
+  placeName: string;
+  totalSlotsOfCar: number;
+  totalSlotsOfBike: number;
+}
+
+/* ================= COMPONENT ================= */
 
 export default function Owner() {
   const [placeName, setPlaceName] = useState("");
@@ -10,55 +31,113 @@ export default function Owner() {
   const [totalSlotsOfBike, setTotalSlotsOfBike] = useState("");
   const [message, setMessage] = useState("");
   const [showForm, setShowForm] = useState(false);
-  const [bookings, setBookings] = useState([]);
-  const [ownedVenues, setOwnedVenues] = useState([]);
+
+  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [ownedVenues, setOwnedVenues] = useState<Venue[]>([]);
+
   const [showFilter, setShowFilter] = useState(false);
   const [searchUser, setSearchUser] = useState("");
   const [searchVehicleNo, setSearchVehicleNo] = useState("");
-  const [filterVehicles, setFilterVehicles] = useState([]);
-  const [filterVenues, setFilterVenues] = useState([]);
+
+  const [filterVehicles, setFilterVehicles] = useState<string[]>([]);
+  const [filterVenues, setFilterVenues] = useState<string[]>([]);
+
+  /* ================= FILTERED BOOKINGS ================= */
 
   const filteredBookings = bookings.filter((b) => {
     return (
-      (filterVehicles.length === 0 || filterVehicles.includes(b.vehicleType)) &&
-      (filterVenues.length === 0 || filterVenues.includes(b.placeName)) &&
+      (filterVehicles.length === 0 ||
+        filterVehicles.includes(b.vehicleType)) &&
+      (filterVenues.length === 0 ||
+        filterVenues.includes(b.placeName)) &&
       (!searchUser ||
         b.userName.toLowerCase().includes(searchUser.toLowerCase())) &&
       (!searchVehicleNo ||
-        b.vehicleNumber.toLowerCase().includes(searchVehicleNo.toLowerCase()))
+        b.vehicleNumber
+          .toLowerCase()
+          .includes(searchVehicleNo.toLowerCase()))
     );
   });
 
-  const toggleValue = (value, setter, current) => {
+  /* ================= FILTER HELPERS ================= */
+
+  const toggleValue = (
+    value: string,
+    setter: React.Dispatch<React.SetStateAction<string[]>>,
+    current: string[],
+  ): void => {
     setter(
       current.includes(value)
         ? current.filter((v) => v !== value)
-        : [...current, value]
+        : [...current, value],
     );
   };
 
-  const removeChip = (value) => {
-    setFilterVehicles((prev) => prev.filter((v) => v !== value));
-    setFilterVenues((prev) => prev.filter((v) => v !== value));
-  };
-
-  const clearAllFilters = () => {
+  const clearAllFilters = (): void => {
     setFilterVehicles([]);
     setFilterVenues([]);
   };
 
-  useEffect(() => {
-    fetchVenues();
-  }, []);
+  /* ================= FETCH VENUES ================= */
 
-  const handleDeleteBooking = async (bookingId) => {
+/* ================= FETCH BOOKINGS ================= */
+
+const fetchBookings = useCallback(async (): Promise<void> => {
+  try {
+    const res = await fetch("/api/booking", {
+      credentials: "include",
+    });
+
+    const data = await res.json();
+    setBookings(data.bookings || []);
+  } catch (error) {
+    toast.error("Failed to load bookings");
+  }
+}, []);
+
+/* ================= FETCH VENUES ================= */
+
+const fetchVenues = useCallback(async (): Promise<void> => {
+  try {
+    const res = await fetch("/api/venues", { credentials: "include" });
+
+    if (!res.ok) {
+      setMessage("Failed to fetch venues.");
+      return;
+    }
+
+    const data = (await res.json()) as { venues?: Venue[] };
+    const venues = data.venues || [];
+
+    setOwnedVenues(venues);
+
+    if (venues.length > 0) {
+      await fetchBookings(); // ✅ safe now
+    }
+  } catch (error) {
+    console.error("Venue Fetch Error:", error);
+    setMessage("Error loading venues.");
+  }
+}, [fetchBookings]);
+
+/* ================= EFFECT ================= */
+
+useEffect(() => {
+  fetchVenues();
+}, [fetchVenues]);
+
+
+
+  /* ================= DELETE BOOKING ================= */
+
+  const handleDeleteBooking = async (bookingId: string): Promise<void> => {
     try {
       const res = await fetch(`/api/booking?bookingId=${bookingId}`, {
         method: "DELETE",
         credentials: "include",
       });
 
-      const data = await res.json();
+      const data = (await res.json()) as { message?: string };
 
       if (res.ok) {
         toast.success("Booking deleted!");
@@ -72,58 +151,19 @@ export default function Owner() {
     }
   };
 
-  const fetchVenues = async () => {
-    try {
-      const res = await fetch("/api/venues", { credentials: "include" });
+  /* ================= ADD VENUE ================= */
 
-      if (!res.ok) {
-        const errorText = await res.text();
-        console.error("Fetch failed:", errorText);
-        setMessage("Failed to fetch venues.");
-        return;
-      }
-
-      const data = await res.json();
-      const venues = data.venues || [];
-      setOwnedVenues(venues);
-
-      const venueNames = venues.map((venue) => venue.placeName);
-      if (venueNames.length > 0) {
-        fetchBookings(venueNames);
-      }
-    } catch (error) {
-      console.error("Venue Fetch Error:", error);
-      setMessage("Error loading venues.");
-    }
-  };
-
-  const fetchBookings = async (venueNames) => {
-    try {
-      const query = venueNames
-        .map((name) => `venueNames[]=${encodeURIComponent(name)}`)
-        .join("&");
-      const res = await fetch(`/api/booking?${query}`);
-      const data = await res.json();
-      if (res.ok) {
-        setBookings(data.bookings || []);
-      } else {
-        toast.error("Failed to fetch bookings");
-      }
-    } catch (error) {
-      console.error("Booking Fetch Error:", error);
-      toast.error("Something went wrong while fetching bookings");
-    }
-  };
-
-  const addParking = async () => {
+  const addParking = async (): Promise<void> => {
     if (!placeName || !totalSlotsOfCar || !totalSlotsOfBike) {
       setMessage("Venue name and total slots are required.");
       return;
     }
-    if (parseInt(totalSlotsOfCar) <= 0 || parseInt(totalSlotsOfBike) <= 0) {
+
+    if (+totalSlotsOfCar <= 0 || +totalSlotsOfBike <= 0) {
       setMessage("Total slots must be positive numbers.");
       return;
     }
+
     try {
       const res = await fetch("/api/venues", {
         method: "POST",
@@ -131,12 +171,12 @@ export default function Owner() {
         credentials: "include",
         body: JSON.stringify({
           placeName,
-          totalSlotsOfCar: parseInt(totalSlotsOfCar),
-          totalSlotsOfBike: parseInt(totalSlotsOfBike),
+          totalSlotsOfCar: Number(totalSlotsOfCar),
+          totalSlotsOfBike: Number(totalSlotsOfBike),
         }),
       });
 
-      const data = await res.json();
+      const data = (await res.json()) as { message?: string };
 
       if (res.ok) {
         toast.success("Venue added successfully!", { autoClose: 2000 });
@@ -149,12 +189,14 @@ export default function Owner() {
         setMessage(data.message || "An error occurred.");
       }
     } catch (error) {
+      console.error("Add Venue Error:", error);
       setMessage("Failed to add venue. Try again later.");
-      console.error("Error:", error);
     }
   };
 
-  const handleFormSubmit = (e) => {
+  const handleFormSubmit = (
+    e: React.FormEvent<HTMLFormElement>,
+  ): void => {
     e.preventDefault();
     addParking();
   };

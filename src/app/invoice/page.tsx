@@ -12,8 +12,17 @@ import "react-toastify/dist/ReactToastify.css";
 import footer_logo_name from "../assets/footer_logo_name.png";
 import { ArrowLeft } from "lucide-react";
 
+interface BookingDetails {
+  placeName: string;
+  userName: string;
+  phoneNumber: string;
+  vehicleNumber: string;
+  vehicleType: string;
+  slotNumber: number;
+}
+
 function InvoiceContent() {
-  const [bookingDetails, setBookingDetails] = useState(null);
+const [bookingDetails, setBookingDetails] = useState<BookingDetails | null>(null);
 const router = useRouter();
 const searchParams = useSearchParams();
 const invoiceRef = useRef(null);

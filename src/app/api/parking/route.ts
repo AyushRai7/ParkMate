@@ -1,11 +1,16 @@
-import { NextResponse } from "next/server";
 import connectDb from "@/database/connection";
 import Parking from "@/model/parking";
 import Booking from "@/model/booking";
 import jwt from "jsonwebtoken";
 import { cookies } from "next/headers";
+import { NextResponse, NextRequest } from "next/server";
+import type { JwtPayload } from "jsonwebtoken";
 
-export async function GET(req) {
+interface AuthTokenPayload extends JwtPayload {
+  id: string;
+}
+
+export async function GET(req: NextRequest) {
   try {
     await connectDb();
     const { searchParams } = new URL(req.nextUrl);
@@ -36,16 +41,16 @@ export async function GET(req) {
   }
 }
 
-export async function POST(req) {
+export async function POST(req: NextRequest) {
   try {
     await connectDb();
 
-    const token = cookies().get("userToken")?.value;
+    const token = (await cookies()).get("userToken")?.value;
     if (!token) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY)as AuthTokenPayload;
     const userId = decoded.id;
 
     const {

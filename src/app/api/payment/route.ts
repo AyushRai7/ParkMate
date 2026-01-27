@@ -1,13 +1,14 @@
 import Stripe from "stripe";
+import { NextResponse, NextRequest } from "next/server";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
-export async function POST(req) {
+export async function POST(req: NextRequest) {
   try {
     const { amount, bookingId, vehicleType } = await req.json();
     if (!bookingId || !amount) {
-      return new Response(
-        JSON.stringify({ error: "Missing bookingId or amount" }),
+      return NextResponse.json(
+        { error: "Missing bookingId or amount" },
         { status: 400 }
       );
     }
@@ -36,9 +37,9 @@ export async function POST(req) {
       cancel_url: cancelUrl,
     });
 
-    return new Response(JSON.stringify({ url: session.url }), { status: 200 });
+    return NextResponse.json({ url: session.url }, { status: 200 });
   } catch (err) {
     console.error("Stripe error:", err);
-    return new Response(JSON.stringify({ error: "Payment failed" }), { status: 500 });
+    return NextResponse.json({ error: "Payment failed" }, { status: 500 });
   }
 }

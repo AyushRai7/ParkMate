@@ -21,7 +21,19 @@ export default function OwnerAuth() {
     password: "",
   });
 
-  const handleSubmit = async (e) => {
+  interface FormData {
+    name: string;
+    email: string;
+    phone: string;
+    password: string;
+  }
+
+  interface ApiResponse {
+    success: boolean;
+    message: string;
+  }
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
     setLoading(true);
 
@@ -29,7 +41,7 @@ export default function OwnerAuth() {
       const endpoint = isLogin ? "/api/ownerlogin" : "/api/ownersignup";
 
       // Ensure correct body for login/signup
-      const payload = isLogin
+      const payload: Partial<FormData> = isLogin
         ? { email: formData.email, password: formData.password }
         : {
             name: formData.name,
@@ -45,7 +57,7 @@ export default function OwnerAuth() {
         body: JSON.stringify(payload),
       });
 
-      const data = await res.json();
+      const data: ApiResponse = await res.json();
       if (res.ok && data.success) {
         toast.success(isLogin ? "Login successful!" : "Account created successfully!");
         setTimeout(() => router.push("/owner"), 1000);

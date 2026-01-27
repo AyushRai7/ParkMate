@@ -21,7 +21,19 @@ export default function LoginPage() {
     phone: "",
   });
 
-  const handleSubmit = async (e) => {
+  interface FormData {
+    name: string;
+    email: string;
+    password: string;
+    phone: string;
+  }
+
+  interface ApiResponse {
+    success: boolean;
+    message?: string;
+  }
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
     setLoading(true);
 
@@ -33,7 +45,7 @@ export default function LoginPage() {
         body: JSON.stringify(formData),
       });
 
-      const data = await res.json();
+      const data: ApiResponse = await res.json();
       if (res.ok && data.success) {
         toast.success(isLogin ? "Login successful!" : "Account created successfully!");
         setTimeout(() => router.push("/homepage"), 1000);

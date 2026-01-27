@@ -1,10 +1,10 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import User from "@/model/user.js";
+import User from "@/model/user";
 import Connection from "@/database/connection";
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 
-export const POST = async (req) => {
+export const POST = async (req: NextRequest) => {
   try {
     await Connection();
 
@@ -47,7 +47,7 @@ export const POST = async (req) => {
     response.cookies.set("userToken", token, {
       httpOnly: true,
       maxAge: 3600,
-      sameSite: "Strict",
+      sameSite: "strict",
       path: "/",
     });
 

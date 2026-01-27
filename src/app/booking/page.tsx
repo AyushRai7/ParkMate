@@ -43,7 +43,7 @@ const searchVenue = async () => {
   }
 };
 
-const handlePhoneNumberChange = (e) => {
+const handlePhoneNumberChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
   const value = e.target.value;
   if (!/^\d*$/.test(value)) return;
   setPhoneNumber(value);
@@ -71,7 +71,7 @@ const handleBookingAndPayment = async () => {
 
   
 
-  if (currentAvailable < 1) {
+  if (!currentAvailable || currentAvailable < 1) {
     toast.info(`No available ${vehicleType.toLowerCase()} spots.`);
     return;
   }
@@ -127,7 +127,11 @@ const handleBookingAndPayment = async () => {
   }
 };
 
-const handleFormSubmit = (e) => {
+interface FormEvent extends React.FormEvent<HTMLFormElement> {
+  preventDefault(): void;
+}
+
+const handleFormSubmit = (e: FormEvent): void => {
   e.preventDefault();
 
   if (
@@ -186,7 +190,7 @@ const handleFormSubmit = (e) => {
                 placeholder="Phone Number"
                 value={phoneNumber}
                 onChange={handlePhoneNumberChange}
-                maxLength="10"
+                maxLength={10}
                 className="w-full border rounded-md px-3 py-2"
               />
 

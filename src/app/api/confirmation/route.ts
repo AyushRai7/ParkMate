@@ -1,16 +1,15 @@
-import connectDb from "@/database/connection.js";
-import Booking from "@/model/booking.js";
-import Parking from "@/model/parking.js";
-import { NextResponse } from "next/server";
-
-function getNextAvailableSlot(totalSlots, bookedSlots) {
+import connectDb from "@/database/connection";
+import Booking from "@/model/booking";
+import Parking from "@/model/parking";
+import { NextRequest, NextResponse } from "next/server"
+function getNextAvailableSlot(totalSlots: number, bookedSlots: number[]) {
   for (let i = 1; i <= totalSlots; i++) {
     if (!bookedSlots.includes(i)) return i;
   }
   return null;
 }
 
-export async function POST(req) {
+export async function POST(req: NextRequest) {
   await connectDb();
   const { bookingId } = await req.json();
 

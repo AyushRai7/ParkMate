@@ -30,21 +30,11 @@ export default function Home() {
       setOwnerLoggedIn(data.ownerLoggedIn);
     } catch (err) {
       console.error(err);
-    } //finally {
-    //   setLoading(false);
-    // }
+    } 
   };
 
   checkAuth();
   }, []);
-
-  const getCookie = (name) => {
-    if (typeof document === "undefined") return null;
-    const match = document.cookie
-      .split("; ")
-      .find((row) => row.startsWith(name + "="));
-    return match ? match.split("=")[1] : null;
-  };
 
   const handleUserAuth = async () => {
     if (userLoggedIn) {
@@ -77,13 +67,13 @@ export default function Home() {
     }
   };
 
-  const handleScroll = (e) => {
+  const handleScroll = (e: React.MouseEvent<HTMLAnchorElement>): void => {
     e.preventDefault();
     const aboutSection = document.getElementById("about-section");
 
     if (aboutSection) {
-      const yOffset = -100;
-      const y =
+      const yOffset: number = -100;
+      const y: number =
         aboutSection.getBoundingClientRect().top + window.scrollY + yOffset;
 
       window.scrollTo({
@@ -92,10 +82,10 @@ export default function Home() {
       });
 
       setTimeout(() => {
-        const rect = aboutSection.getBoundingClientRect();
+        const rect: DOMRect = aboutSection.getBoundingClientRect();
         if (rect.bottom > window.innerHeight) {
           window.scrollTo({
-            top: window.scrollY + rect.bottom - window.innerHeight + 20, // Small extra scroll
+            top: window.scrollY + rect.bottom - window.innerHeight + 20,
             behavior: "smooth",
           });
         }
@@ -248,7 +238,7 @@ export default function Home() {
             {/* About title */}
             <div className="ml-3 mt-1 md:mt-2">
               <h1 className="text-2xl md:text-4xl mb-6">
-                What's Park<span className="text-red-600">M</span>ate?
+                What&apos;s Park<span className="text-red-600">M</span>ate?
               </h1>
             </div>
           </div>
