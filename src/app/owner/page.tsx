@@ -1,450 +1,281 @@
 "use client";
 
-import React, { useEffect, useState, useCallback } from "react";
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
-import { SlidersHorizontal } from "lucide-react";
+import { useState, useEffect, useMemo, useCallback } from "react";
+import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
+import { motion } from "framer-motion";
+import { toast } from "sonner";
 
-/* ================= TYPES ================= */
+
+import Navbar from "@/components/owner/Navbar";
+import Footer from "@/components/homepage/Footer";
+import OwnerHeader from "@/components/owner/Header";
+import AddVenueModal from "@/components/owner/AddVenue";
+import SearchBar from "@/components/owner/SearchBar";
+import BookingsTable from "@/components/owner/BookingsTable";
 
 interface Booking {
-  _id: string;
+  id: string;
   userName: string;
-  placeName: string;
-  vehicleType: string;
-  slotNumber: string;
+  phoneNumber: string;
+  vehicleType: "CAR" | "BIKE";
+  slotNumber: number | null;
   vehicleNumber: string;
+  status: string;
+  expiresAt: string;
+  createdAt: string;
+  venue: {
+    name: string;
+    totalCarSlots: number;
+    totalBikeSlots: number;
+  };
+  user: {
+    name: string | null;
+    email: string;
+    phone: string | null;
+  };
 }
 
 interface Venue {
-  _id: string;
-  placeName: string;
-  totalSlotsOfCar: number;
-  totalSlotsOfBike: number;
+  id: string;
+  name: string;
+  totalCarSlots: number;
+  totalBikeSlots: number;
+  createdAt: string;
+  _count: {
+    bookings: number;
+  };
 }
 
-/* ================= COMPONENT ================= */
+export default function OwnerPage() {
+  const router = useRouter();
+  const { data: session, status } = useSession();
 
-export default function Owner() {
-  const [placeName, setPlaceName] = useState("");
-  const [totalSlotsOfCar, setTotalSlotsOfCar] = useState("");
-  const [totalSlotsOfBike, setTotalSlotsOfBike] = useState("");
-  const [message, setMessage] = useState("");
-  const [showForm, setShowForm] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [usernameQuery, setUsernameQuery] = useState("");
+  const [vehicleQuery, setVehicleQuery] = useState("");
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [vehicleTypeFilter, setVehicleTypeFilter] =
+    useState<"all" | "CAR" | "BIKE">("all");
+  const [selectedVenues, setSelectedVenues] = useState<string[]>([]);
 
   const [bookings, setBookings] = useState<Booking[]>([]);
-  const [ownedVenues, setOwnedVenues] = useState<Venue[]>([]);
+  const [venues, setVenues] = useState<Venue[]>([]);
+  const [dataLoading, setDataLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const [showFilter, setShowFilter] = useState(false);
-  const [searchUser, setSearchUser] = useState("");
-  const [searchVehicleNo, setSearchVehicleNo] = useState("");
 
-  const [filterVehicles, setFilterVehicles] = useState<string[]>([]);
-  const [filterVenues, setFilterVenues] = useState<string[]>([]);
-
-  /* ================= FILTERED BOOKINGS ================= */
-
-  const filteredBookings = bookings.filter((b) => {
-    return (
-      (filterVehicles.length === 0 ||
-        filterVehicles.includes(b.vehicleType)) &&
-      (filterVenues.length === 0 ||
-        filterVenues.includes(b.placeName)) &&
-      (!searchUser ||
-        b.userName.toLowerCase().includes(searchUser.toLowerCase())) &&
-      (!searchVehicleNo ||
-        b.vehicleNumber
-          .toLowerCase()
-          .includes(searchVehicleNo.toLowerCase()))
-    );
-  });
-
-  /* ================= FILTER HELPERS ================= */
-
-  const toggleValue = (
-    value: string,
-    setter: React.Dispatch<React.SetStateAction<string[]>>,
-    current: string[],
-  ): void => {
-    setter(
-      current.includes(value)
-        ? current.filter((v) => v !== value)
-        : [...current, value],
-    );
-  };
-
-  const clearAllFilters = (): void => {
-    setFilterVehicles([]);
-    setFilterVenues([]);
-  };
-
-  /* ================= FETCH VENUES ================= */
-
-/* ================= FETCH BOOKINGS ================= */
-
-const fetchBookings = useCallback(async (): Promise<void> => {
+  const fetchOwnerData = useCallback(async () => {
   try {
-    const res = await fetch("/api/booking", {
+    setDataLoading(true);
+    setError(null);
+
+    const response = await fetch("/api/owner", {
       credentials: "include",
     });
 
-    const data = await res.json();
+    if (!response.ok) {
+      if (response.status === 401 || response.status === 403) {
+        toast.error("Session expired. Please sign in again.");
+        router.push("/login?role=OWNER");
+        return;
+      }
+      throw new Error("Unable to load dashboard data");
+    }
+
+    const data = await response.json();
+
+    if (!data.success) {
+      throw new Error(data.error || "Failed to load dashboard");
+    }
+
     setBookings(data.bookings || []);
-  } catch (error) {
-    toast.error("Failed to load bookings");
+    setVenues(data.venues || []);
+
+    toast.success("Dashboard updated");
+  } catch (err: any) {
+    setError(err.message);
+    toast.error(err.message || "Failed to load owner dashboard");
+  } finally {
+    setDataLoading(false);
   }
-}, []);
+}, [router]);
 
-/* ================= FETCH VENUES ================= */
 
-const fetchVenues = useCallback(async (): Promise<void> => {
+  /* ---------------- AUTH CHECK ---------------- */
+
+  useEffect(() => {
+    if (status === "loading") return;
+
+    if (status === "unauthenticated") {
+      router.push("/login?role=OWNER");
+      return;
+    }
+
+    if (session?.user && !session.user.isOwner) {
+      router.push("/login?role=OWNER&error=no-access");
+      return;
+    }
+
+    if (session?.user?.isOwner) {
+      fetchOwnerData();
+    }
+  }, [status, session, router, fetchOwnerData]);
+
+  /* ---------------- DERIVED DATA ---------------- */
+
+  const allVenues = useMemo(() => venues.map(v => v.name), [venues]);
+
+  const filteredBookings = useMemo(() => {
+    return bookings.filter(b => {
+      const matchesUsername = b.userName
+        .toLowerCase()
+        .includes(usernameQuery.toLowerCase());
+
+      const matchesVehicle = b.vehicleNumber
+        .toLowerCase()
+        .includes(vehicleQuery.toLowerCase());
+
+      const matchesType =
+        vehicleTypeFilter === "all" || b.vehicleType === vehicleTypeFilter;
+
+      const matchesVenue =
+        selectedVenues.length === 0 ||
+        selectedVenues.includes(b.venue.name);
+
+      return (
+        matchesUsername &&
+        matchesVehicle &&
+        matchesType &&
+        matchesVenue
+      );
+    });
+  }, [
+    bookings,
+    usernameQuery,
+    vehicleQuery,
+    vehicleTypeFilter,
+    selectedVenues,
+  ]);
+
+  /* ---------------- ACTIONS ---------------- */
+
+  const handleDelete = async (id: string) => {
   try {
-    const res = await fetch("/api/venues", { credentials: "include" });
+    const res = await fetch(`/api/owner?bookingId=${id}`, {
+      method: "DELETE",
+    });
+    const data = await res.json();
 
     if (!res.ok) {
-      setMessage("Failed to fetch venues.");
-      return;
+      throw new Error(data.error || "Failed to delete booking");
     }
 
-    const data = (await res.json()) as { venues?: Venue[] };
-    const venues = data.venues || [];
-
-    setOwnedVenues(venues);
-
-    if (venues.length > 0) {
-      await fetchBookings(); // ✅ safe now
-    }
-  } catch (error) {
-    console.error("Venue Fetch Error:", error);
-    setMessage("Error loading venues.");
+    toast.success("Booking deleted");
+    fetchOwnerData();
+  } catch (err: any) {
+    toast.error(err.message || "Could not delete booking");
   }
-}, [fetchBookings]);
-
-/* ================= EFFECT ================= */
-
-useEffect(() => {
-  fetchVenues();
-}, [fetchVenues]);
+};
 
 
+  const handleVenueAdded = () => {
+  toast.success("Venue added successfully");
+  fetchOwnerData();
+};
 
-  /* ================= DELETE BOOKING ================= */
 
-  const handleDeleteBooking = async (bookingId: string): Promise<void> => {
-    try {
-      const res = await fetch(`/api/booking?bookingId=${bookingId}`, {
-        method: "DELETE",
-        credentials: "include",
-      });
+  if (status === "loading" || dataLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <motion.div
+          animate={{ rotate: 360 }}
+          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+          className="h-12 w-12 rounded-full border-4 border-primary/30 border-t-primary"
+        />
+      </div>
+    );
+  }
 
-      const data = (await res.json()) as { message?: string };
+  if (!session?.user?.isOwner) return null;
 
-      if (res.ok) {
-        toast.success("Booking deleted!");
-        setBookings((prev) => prev.filter((b) => b._id !== bookingId));
-      } else {
-        toast.error(data.message || "Failed to delete");
-      }
-    } catch (error) {
-      console.error("Delete error:", error);
-      toast.error("Error deleting booking");
-    }
-  };
+  if (error) {
+  return (
+    <div className="flex min-h-screen items-center justify-center">
+      <button
+        onClick={() => {
+          toast.message("Retrying…");
+          fetchOwnerData();
+        }}
+        className="px-4 py-2 bg-primary text-primary-foreground rounded"
+      >
+        Try Again
+      </button>
+    </div>
+  );
+}
 
-  /* ================= ADD VENUE ================= */
 
-  const addParking = async (): Promise<void> => {
-    if (!placeName || !totalSlotsOfCar || !totalSlotsOfBike) {
-      setMessage("Venue name and total slots are required.");
-      return;
-    }
-
-    if (+totalSlotsOfCar <= 0 || +totalSlotsOfBike <= 0) {
-      setMessage("Total slots must be positive numbers.");
-      return;
-    }
-
-    try {
-      const res = await fetch("/api/venues", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({
-          placeName,
-          totalSlotsOfCar: Number(totalSlotsOfCar),
-          totalSlotsOfBike: Number(totalSlotsOfBike),
-        }),
-      });
-
-      const data = (await res.json()) as { message?: string };
-
-      if (res.ok) {
-        toast.success("Venue added successfully!", { autoClose: 2000 });
-        setPlaceName("");
-        setTotalSlotsOfCar("");
-        setTotalSlotsOfBike("");
-        setShowForm(false);
-        fetchVenues();
-      } else {
-        setMessage(data.message || "An error occurred.");
-      }
-    } catch (error) {
-      console.error("Add Venue Error:", error);
-      setMessage("Failed to add venue. Try again later.");
-    }
-  };
-
-  const handleFormSubmit = (
-    e: React.FormEvent<HTMLFormElement>,
-  ): void => {
-    e.preventDefault();
-    addParking();
-  };
 
   return (
-    <div className="p-3 md:p-8 bg-gray-50 min-h-screen">
-      <ToastContainer position="top-right" />
+    <div className="min-h-screen bg-background">
+      <Navbar />
 
-      {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between mb-4 gap-3">
-        <div className="flex items-center">
-          <div className="flex flex-row mr-2 mb-3">
-            <div className="w-1 h-8 bg-blue-900"></div>
-            <div className="w-1 h-8 bg-red-600 ml-1 mt-2"></div>
-          </div>
-          <h1
-            className="text-2xl sm:text-3xl md:text-3xl font-bold"
-            style={{
-              fontFamily: "Raleway, sans-serif",
-              color: "rgb(13, 14, 62)",
+      <main className="pt-24 pb-16 px-4">
+        <div className="max-w-6xl mx-auto">
+          <OwnerHeader onAddVenue={() => setIsModalOpen(true)} />
+
+          <SearchBar
+            usernameQuery={usernameQuery}
+            vehicleQuery={vehicleQuery}
+            onUsernameChange={setUsernameQuery}
+            onVehicleChange={setVehicleQuery}
+          />
+
+          <BookingsTable
+            bookings={filteredBookings.map(b => ({
+              id: b.id,
+              user: b.userName || b.user.name || "Unknown",
+              venue: b.venue.name,
+              vehicleType: b.vehicleType.toLowerCase() as "car" | "bike",
+              spotNumber: b.slotNumber
+                ? `${b.vehicleType[0]}-${b.slotNumber}`
+                : "N/A",
+              vehicleNumber: b.vehicleNumber,
+            }))}
+            onDelete={handleDelete}
+            isFilterOpen={isFilterOpen}
+            onFilterToggle={() => setIsFilterOpen(!isFilterOpen)}
+            vehicleTypeFilter={
+              vehicleTypeFilter.toLowerCase() as "all" | "car" | "bike"
+            }
+            onVehicleTypeChange={t =>
+              setVehicleTypeFilter(t.toUpperCase() as any)
+            }
+            venueFilters={allVenues}
+            selectedVenues={selectedVenues}
+            onVenueToggle={v =>
+              setSelectedVenues(prev =>
+                prev.includes(v)
+                  ? prev.filter(x => x !== v)
+                  : [...prev, v]
+              )
+            }
+            onClearFilters={() => {
+              setVehicleTypeFilter("all");
+              setSelectedVenues([]);
             }}
-          >
-            Admin Dashboard
-          </h1>
+          />
         </div>
-        <div>
-          <button
-            onClick={() => setShowForm(!showForm)}
-            className="bg-black text-white py-2 px-3 rounded hover:bg-red-600"
-          >
-            Add Venue
-          </button>
-        </div>
-      </div>
+      </main>
 
-      {/* Add Venue Modal */}
-      {showForm && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 backdrop-blur-sm z-50 flex items-center justify-center">
-          <div className="bg-white w-full max-w-lg mx-2 md:mx-4 shadow-lg rounded-lg p-4 sm:p-6 relative">
-            <button
-              onClick={() => setShowForm(false)}
-              className="absolute top-3 right-3 text-gray-600 hover:text-red-500 text-xl font-bold"
-            >
-              ×
-            </button>
+      <Footer />
 
-            <div className="mb-4 flex items-center">
-              <div className="flex flex-row mr-2 mb-2">
-                <div className="w-1 h-8 sm:h-10 bg-blue-900"></div>
-                <div className="w-1 h-8 sm:h-10 bg-red-600 ml-1 mt-2"></div>
-              </div>
-              <h1
-                className="text-2xl sm:text-4xl"
-                style={{
-                  fontFamily: "Raleway, sans-serif",
-                  color: "rgb(13, 14, 62)",
-                }}
-              >
-                Add Spot
-              </h1>
-            </div>
-
-            <form onSubmit={handleFormSubmit}>
-              <input
-                type="text"
-                placeholder="Venue Name"
-                value={placeName}
-                onChange={(e) => setPlaceName(e.target.value)}
-                className="w-full border p-2 mb-4 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-              <input
-                type="number"
-                placeholder="Total Car Slots"
-                value={totalSlotsOfCar}
-                onChange={(e) => setTotalSlotsOfCar(e.target.value)}
-                className="w-full border p-2 mb-4 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-              <input
-                type="number"
-                placeholder="Total Bike Slots"
-                value={totalSlotsOfBike}
-                onChange={(e) => setTotalSlotsOfBike(e.target.value)}
-                className="w-full border p-2 mb-4 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-              <button
-                type="submit"
-                className="bg-black text-white w-full py-2 rounded hover:bg-red-600"
-              >
-                Submit
-              </button>
-              {message && (
-                <p
-                  className={`mt-2 text-sm ${
-                    message.includes("success")
-                      ? "text-green-600"
-                      : "text-red-600"
-                  }`}
-                >
-                  {message}
-                </p>
-              )}
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Search Bar */}
-      <div className="flex flex-col md:flex-row gap-2 mb-4">
-        <input
-          type="text"
-          placeholder="Search by username"
-          value={searchUser}
-          onChange={(e) => setSearchUser(e.target.value)}
-          className="w-full md:w-1/2 border p-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
-        <input
-          type="text"
-          placeholder="Search by vehicle number"
-          value={searchVehicleNo}
-          onChange={(e) => setSearchVehicleNo(e.target.value)}
-          className="w-full md:w-1/2 border p-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
-      </div>
-
-      {/* Bookings/Table */}
-      <div className="mt-2 relative">
-        <div className="flex flex-col md:flex-row justify-between items-center mb-4 gap-2">
-          <h2 className="text-lg sm:text-xl font-semibold">
-            Bookings for Your Venues
-          </h2>
-          <button
-            onClick={() => setShowFilter(!showFilter)}
-            className="p-2 bg-gray-100 hover:bg-gray-200 rounded-full transition"
-          >
-            {showFilter ? "✕" : <SlidersHorizontal className="w-5 h-5" />}
-          </button>
-        </div>
-
-        {/* FILTER SECTION */}
-        <div className="relative flex justify-end mb-3">
-          <div
-            className={`absolute right-0 top-1 w-72 bg-white border rounded-xl shadow-lg p-4
-      transition-all duration-300 origin-top-right
-      ${
-        showFilter
-          ? "scale-100 opacity-100 translate-y-0"
-          : "scale-95 opacity-0 -translate-y-2 pointer-events-none"
-      }`}
-          >
-            {/* Vehicle Type */}
-            <div className="mb-4">
-              <p className="text-sm font-medium mb-2">Vehicle Type</p>
-              <div className="flex gap-2">
-                {["Car", "Bike"].map((v) => (
-                  <button
-                    key={v}
-                    onClick={() =>
-                      toggleValue(v, setFilterVehicles, filterVehicles)
-                    }
-                    className={`px-3 py-1 rounded-full text-sm border transition
-              ${
-                filterVehicles.includes(v)
-                  ? "bg-black text-white"
-                  : "bg-gray-100 hover:bg-gray-200"
-              }`}
-                  >
-                    {v}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Venue */}
-            <div className="mb-4">
-              <p className="text-sm font-medium mb-2">Venue</p>
-              <div className="flex flex-wrap gap-2 max-h-28 overflow-y-auto">
-                {ownedVenues.map((v) => (
-                  <button
-                    key={v._id}
-                    onClick={() =>
-                      toggleValue(v.placeName, setFilterVenues, filterVenues)
-                    }
-                    className={`px-3 py-1 rounded-full text-xs border transition
-              ${
-                filterVenues.includes(v.placeName)
-                  ? "bg-black text-white"
-                  : "bg-gray-100 hover:bg-gray-200"
-              }`}
-                  >
-                    {v.placeName}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Clear */}
-            {(filterVehicles.length > 0 || filterVenues.length > 0) && (
-              <button
-                onClick={clearAllFilters}
-                className="text-sm text-red-600 hover:underline"
-              >
-                Clear all filters
-              </button>
-            )}
-          </div>
-        </div>
-
-        {filteredBookings.length === 0 ? (
-          <p className="text-gray-600">No bookings found.</p>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full border border-gray-300 text-left bg-white rounded shadow mt-2">
-              <thead>
-                <tr className="bg-gray-200">
-                  <th className="px-4 py-2">User</th>
-                  <th className="px-4 py-2">Venue</th>
-                  <th className="px-4 py-2">Vehicle</th>
-                  <th className="px-4 py-2">Spot</th>
-                  <th className="px-4 py-2">Vehicle No.</th>
-                  <th className="px-4 py-2 text-center">Delete</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredBookings.map((b, idx) => (
-                  <tr
-                    key={b._id || idx}
-                    className="border-t text-xs sm:text-base"
-                  >
-                    <td className="px-4 py-2">{b.userName || "N/A"}</td>
-                    <td className="px-4 py-2">{b.placeName}</td>
-                    <td className="px-4 py-2">{b.vehicleType}</td>
-                    <td className="px-4 py-2">{b.slotNumber}</td>
-                    <td className="px-4 py-2">{b.vehicleNumber}</td>
-                    <td className="px-4 py-2 text-center">
-                      <button
-                        onClick={() => handleDeleteBooking(b._id)}
-                        className="bg-red-600 text-white py-1 px-2 rounded hover:bg-red-700 text-xs sm:text-base"
-                      >
-                        Delete
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+      <AddVenueModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSuccess={handleVenueAdded}
+      />
     </div>
   );
 }

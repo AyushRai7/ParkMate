@@ -1,59 +1,99 @@
-import connectDb from "@/database/connection";
-import Booking from "@/model/booking";
-import Parking from "@/model/parking";
-import { NextRequest, NextResponse } from "next/server"
-function getNextAvailableSlot(totalSlots: number, bookedSlots: number[]) {
+import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+import { BookingStatus, VehicleType } from "@prisma/client";
+
+function getNextAvailableSlot(totalSlots: number, bookedSlots: number[]): number | null {
+  const used = new Set(bookedSlots);
+  
   for (let i = 1; i <= totalSlots; i++) {
-    if (!bookedSlots.includes(i)) return i;
+    if (!used.has(i)) {
+      return i;
+    }
   }
+  
   return null;
 }
 
 export async function POST(req: NextRequest) {
-  await connectDb();
-  const { bookingId } = await req.json();
+  try {
+    const { bookingId } = await req.json();
 
-  const booking = await Booking.findById(bookingId);
-  if (!booking || booking.status === "CONFIRMED") {
-    return NextResponse.json({ success: true });
-  }
+    if (!bookingId) {
+      return NextResponse.json(
+        { error: "Missing bookingId" },
+        { status: 400 }
+      );
+    }
 
-  const parking = await Parking.findById(booking.parkingId);
-  const isCar = booking.vehicleType === "Car";
+    const result = await prisma.$transaction(async (tx) => {
+      const booking = await tx.booking.findUnique({
+        where: { id: bookingId },
+        include: {
+          venue: true
+        }
+      });
 
-  const totalSlots = isCar
-    ? parking.totalSlotsOfCar
-    : parking.totalSlotsOfBike;
+      if (!booking) {
+        throw new Error("Booking not found");
+      }
 
-  const bookedSlots = isCar
-    ? parking.bookedSlotsOfCar
-    : parking.bookedSlotsOfBike;
+      if (booking.status === BookingStatus.CONFIRMED) {
+        return {
+          success: true,
+          alreadyConfirmed: true,
+          slotNumber: booking.slotNumber,
+          slotLabel: `P${booking.slotNumber}`,
+          venueName: booking.venue.name
+        };
+      }
 
-  const slotNumber = getNextAvailableSlot(totalSlots, bookedSlots);
+      const venue = booking.venue;
 
-  if (!slotNumber) {
+      const totalSlots = booking.vehicleType === VehicleType.CAR
+        ? venue.totalCarSlots
+        : venue.totalBikeSlots;
+
+      const confirmedBookings = await tx.booking.findMany({
+        where: {
+          venueId: venue.id,
+          vehicleType: booking.vehicleType,
+          status: BookingStatus.CONFIRMED,
+        },
+        select: { slotNumber: true }
+      });
+
+      const bookedSlots = confirmedBookings
+        .map(b => b.slotNumber)
+        .filter((s): s is number => s !== null);
+      const nextSlot = getNextAvailableSlot(totalSlots, bookedSlots);
+
+      if (!nextSlot) {
+        throw new Error("No slots available");
+      }
+
+      await tx.booking.update({
+        where: { id: bookingId },
+        data: {
+          slotNumber: nextSlot,
+          status: BookingStatus.CONFIRMED,
+        }
+      });
+
+      return {
+        success: true,
+        slotNumber: nextSlot,
+        slotLabel: `P${nextSlot}`,
+        venueName: venue.name,
+        vehicleType: booking.vehicleType
+      };
+    });
+
+    return NextResponse.json(result);
+  } catch (error: any) {
+    console.error("❌ Confirmation error:", error);
     return NextResponse.json(
-      { message: "No slots available" },
-      { status: 400 }
+      { error: "Slot assignment failed", details: error.message },
+      { status: 500 }
     );
   }
-
-  if (isCar) {
-    parking.bookedSlotsOfCar.push(slotNumber);
-    parking.availableSlotsOfCar = totalSlots - parking.bookedSlotsOfCar.length;
-  } else {
-    parking.bookedSlotsOfBike.push(slotNumber);
-    parking.availableSlotsOfBike =
-      totalSlots - parking.bookedSlotsOfBike.length;
-  }
-
-  booking.slotNumber = slotNumber;
-  booking.status = "CONFIRMED";
-
-  await parking.save();
-  await booking.save();
-  if (booking.status === "CONFIRMED" && booking.slotNumber) {
-  return NextResponse.json({ success: true });
 }
-}
-

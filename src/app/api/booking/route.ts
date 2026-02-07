@@ -1,140 +1,240 @@
-import connectDb from "@/database/connection";
-import Booking from "@/model/booking";
-import Parking from "@/model/parking";
-import jwt from "jsonwebtoken";
-import { cookies } from "next/headers";
-import mongoose from "mongoose";
 import { NextRequest, NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+import { VehicleType, BookingStatus } from "@prisma/client";
 
-// ==================== HELPER ====================
-function getNextAvailableSpot(totalSlots: number, bookedSlots: number[]): number | null {
-  const used = new Set(bookedSlots);
-  for (let i = 1; i <= totalSlots; i++) {
-    if (!used.has(i)) return i;
-  }
-  return null;
-}
-
-// ==================== GET HANDLER ====================
-export async function GET(req: NextRequest) {
-  try {
-    await connectDb();
-
-    const cookieStore = await cookies();
-    const ownerToken = cookieStore.get("ownerToken")?.value;
-
-    // ====== OWNER DASHBOARD ======
-    if (ownerToken) {
-      const decoded = jwt.verify(ownerToken, process.env.JWT_SECRET_KEY!) as { id: string };
-
-      const venues = await Parking.find({ ownerId: decoded.id }).select("_id");
-      const venueIds = venues.map((v) => v._id);
-
-      const bookings = await Booking.find({ parkingId: { $in: venueIds } }).sort({ createdAt: -1 });
-
-      return NextResponse.json({ bookings }, { status: 200 });
-    }
-
-    // ====== USER DASHBOARD ======
-    const url = new URL(req.url);
-    const userId = url.searchParams.get("userId");
-    if (userId) {
-      const bookings = await Booking.find({ userId });
-      return NextResponse.json({ bookings }, { status: 200 });
-    }
-
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-  } catch (err) {
-    console.error("GET /booking error:", err);
-    return NextResponse.json({ message: "Server error" }, { status: 500 });
-  }
-}
-
-// ==================== POST HANDLER ====================
 export async function POST(req: NextRequest) {
   try {
-    await connectDb();
-
-    const token = (await cookies()).get("userToken")?.value;
-    if (!token) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-
-    const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY!) as { id: string };
-    const userId = decoded.id;
-
-    const { placeName, userName, phoneNumber, vehicleNumber, vehicleType } = await req.json();
-
-    if (!placeName || !userName || !phoneNumber || !vehicleNumber || !vehicleType) {
-      return NextResponse.json({ message: "All fields required" }, { status: 400 });
+    const session = await getServerSession(authOptions);
+    
+    if (!session?.user?.id) {
+      return NextResponse.json(
+        { error: "User not authenticated" },
+        { status: 401 }
+      );
     }
 
-    const parking = await Parking.findOne({ placeName: placeName.trim().toUpperCase() });
-    if (!parking) return NextResponse.json({ message: "Venue not found" }, { status: 404 });
+    if (!session.user.isUser) {
+      return NextResponse.json(
+        { error: "You need a user account to make bookings" },
+        { status: 403 }
+      );
+    }
 
-    const isCar = vehicleType === "Car";
-    const totalSlots = isCar ? parking.totalSlotsOfCar : parking.totalSlotsOfBike;
-    const bookedSlots = isCar ? parking.bookedSlotsOfCar : parking.bookedSlotsOfBike;
-
-    const slotNumber = getNextAvailableSpot(totalSlots, bookedSlots);
-    if (!slotNumber) return NextResponse.json({ message: "No slots available" }, { status: 400 });
-
-    // Add slot to booked slots
-    if (isCar) parking.bookedSlotsOfCar.push(slotNumber);
-    else parking.bookedSlotsOfBike.push(slotNumber);
-    await parking.save();
-
-    const booking = await Booking.create({
-      userId,
-      parkingId: parking._id,
-      placeName: parking.placeName,
+    const userId = session.user.id;
+    
+    const body = await req.json();
+    const {
+      name,
       userName,
       phoneNumber,
-      vehicleNumber,
       vehicleType,
-      slotNumber,
-      status: "PENDING",
+      vehicleNumber,
+    } = body;
+
+    if (!name || !userName || !phoneNumber || !vehicleType || !vehicleNumber) {
+      return NextResponse.json(
+        { 
+          error: "Missing required fields",
+          received: { name, userName, phoneNumber, vehicleType, vehicleNumber }
+        },
+        { status: 400 }
+      );
+    }
+
+    if (!Object.values(VehicleType).includes(vehicleType)) {
+      return NextResponse.json(
+        { 
+          error: "Invalid vehicle type. Must be CAR or BIKE",
+          received: vehicleType
+        },
+        { status: 400 }
+      );
+    }
+
+    const venue = await prisma.venue.findUnique({
+      where: { name: name.trim() },
+      include: {
+        bookings: {
+          where: {
+            status: {
+              in: [BookingStatus.CONFIRMED, BookingStatus.PENDING]
+            },
+            vehicleType,
+          },
+        },
+      },
     });
 
-    return NextResponse.json({ bookingId: booking._id, amount: isCar ? 100 : 50 }, { status: 201 });
-  } catch (err) {
-    console.error("POST /booking error:", err);
-    return NextResponse.json({ message: "Booking failed" }, { status: 500 });
+    if (!venue) {      
+      const availableVenues = await prisma.venue.findMany({
+        select: { name: true }
+      });
+      
+      return NextResponse.json(
+        { 
+          error: "Venue not found",
+          searchedFor: name,
+          availableVenues: availableVenues.map(v => v.name)
+        },
+        { status: 404 }
+      );
+    }
+
+    const totalSlots =
+      vehicleType === VehicleType.CAR
+        ? venue.totalCarSlots
+        : venue.totalBikeSlots;
+
+    const bookedCount = venue.bookings.length;
+    if (bookedCount >= totalSlots) {
+      return NextResponse.json(
+        { 
+          error: "No slots available",
+          totalSlots,
+          bookedCount,
+          vehicleType
+        },
+        { status: 400 }
+      );
+    }
+    
+    const booking = await prisma.booking.create({
+      data: {
+        userId,
+        venueId: venue.id,
+        userName,
+        phoneNumber,
+        vehicleType,
+        vehicleNumber,
+        status: BookingStatus.PENDING,
+        slotNumber: null,
+        expiresAt: new Date(Date.now() + 15 * 60 * 1000), 
+      },
+    });
+    
+    return NextResponse.json(
+      {
+        success: true,
+        bookingId: booking.id,
+        message: "Booking created. Please complete payment to confirm your slot.",
+        booking: {
+          id: booking.id,
+          venueName: venue.name,
+          vehicleType: booking.vehicleType,
+          status: booking.status,
+          expiresAt: booking.expiresAt,
+        }
+      },
+      { status: 201 }
+    );
+  } catch (error: any) {
+    console.error("❌ Booking error:", error);
+    return NextResponse.json(
+      { 
+        error: "Internal server error", 
+        details: error.message,
+        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      },
+      { status: 500 }
+    );
   }
 }
 
-// ==================== DELETE HANDLER ====================
-export async function DELETE(req: NextRequest) {
-  await connectDb();
-  const session = await mongoose.startSession();
-  session.startTransaction();
-
+export async function GET(req: NextRequest) {
   try {
-    const bookingId = new URL(req.url).searchParams.get("bookingId");
-    if (!bookingId || !mongoose.Types.ObjectId.isValid(bookingId)) {
-      return NextResponse.json({ message: "Invalid booking ID" }, { status: 400 });
-    }
+    const { searchParams } = new URL(req.url);
+    const venueName = searchParams.get("venue");
+    const status = searchParams.get("status");
 
-    const booking = await Booking.findById(bookingId).session(session);
-    if (!booking) return NextResponse.json({ message: "Booking not found" }, { status: 404 });
+    if (venueName) {
 
-    const parking = await Parking.findById(booking.parkingId).session(session);
-    if (parking) {
-      if (booking.vehicleType === "Car") {
-        parking.bookedSlotsOfCar = parking.bookedSlotsOfCar.filter((s: number) => s !== booking.slotNumber);
-      } else {
-        parking.bookedSlotsOfBike = parking.bookedSlotsOfBike.filter((s: number) => s !== booking.slotNumber);
+      const venue = await prisma.venue.findUnique({
+        where: { name: venueName.trim() },
+        include: {
+          bookings: {
+            where: {
+              status: {
+                in: [BookingStatus.CONFIRMED, BookingStatus.PENDING]
+              }
+            },
+            select: {
+              vehicleType: true
+            }
+          }
+        }
+      });
+
+      if (!venue) {
+        return NextResponse.json(
+          { error: "Venue not found" },
+          { status: 404 }
+        );
       }
-      await parking.save({ session });
+
+      const bookedCarSlots = venue.bookings.filter(b => b.vehicleType === "CAR").length;
+      const bookedBikeSlots = venue.bookings.filter(b => b.vehicleType === "BIKE").length;
+
+      const response = {
+        success: true,
+        venue: {
+          id: venue.id,
+          name: venue.name,
+          totalCarSlots: venue.totalCarSlots,
+          totalBikeSlots: venue.totalBikeSlots,
+          bookedCarSlots,
+          bookedBikeSlots,
+          availableCarSlots: venue.totalCarSlots - bookedCarSlots,
+          availableBikeSlots: venue.totalBikeSlots - bookedBikeSlots,
+        }
+      };
+
+      return NextResponse.json(response);
     }
 
-    await booking.deleteOne({ session });
-    await session.commitTransaction();
+    const session = await getServerSession(authOptions);
+    
+    if (!session?.user?.id) {
+      return NextResponse.json(
+        { error: "User not authenticated" },
+        { status: 401 }
+      );
+    }
 
-    return NextResponse.json({ message: "Booking cancelled successfully" }, { status: 200 });
-  } catch (err) {
-    await session.abortTransaction();
-    console.error("DELETE /booking error:", err);
-    return NextResponse.json({ message: "Cancel failed" }, { status: 500 });
-  } finally {
-    session.endSession();
+    const userId = session.user.id;
+
+    const where: any = { userId };
+    if (status && Object.values(BookingStatus).includes(status as BookingStatus)) {
+      where.status = status as BookingStatus;
+    }
+
+    const bookings = await prisma.booking.findMany({
+      where,
+      include: {
+        venue: {
+          select: {
+            name: true,
+            totalCarSlots: true,
+            totalBikeSlots: true,
+          }
+        }
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    });
+
+    return NextResponse.json({
+      success: true,
+      bookings,
+      count: bookings.length
+    });
+  } catch (error: any) {
+    console.error("❌ GET booking error:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch data", details: error.message },
+      { status: 500 }
+    );
   }
 }

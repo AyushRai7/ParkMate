@@ -1,65 +1,130 @@
-import { cookies } from "next/headers";
-import jwt from "jsonwebtoken";
-import Venue from "@/model/parking";
-import connectDb from "@/database/connection";
 import { NextRequest, NextResponse } from "next/server";
-import type { JwtPayload } from "jsonwebtoken";
+import { prisma } from "@/lib/prisma";
+import { BookingStatus } from "@prisma/client";
 
-interface AuthTokenPayload extends JwtPayload {
-  id: string;
-}
-
-
-export async function POST(req: NextRequest) {
+export async function GET(req: NextRequest) {
   try {
-    await connectDb();
-    const cookieStore = await cookies();
-    const token = cookieStore.get("ownerToken")?.value;
+    const { searchParams } = new URL(req.url);
+    const name = searchParams.get("name");
 
-    if (!token) {
-      return NextResponse.json(JSON.stringify({ message: "Unauthorized" }), { status: 401 });
+    if (!name) {
+      const allVenues = await prisma.venue.findMany({
+        select: {
+          id: true,
+          name: true,
+          totalCarSlots: true,
+          totalBikeSlots: true,
+        },
+        orderBy: {
+          name: 'asc'
+        }
+      });
+
+      return NextResponse.json({
+        success: true,
+        venues: allVenues,
+        count: allVenues.length
+      });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY) as AuthTokenPayload;
-    const { placeName, totalSlotsOfCar, totalSlotsOfBike } = await req.json();
-
-    const newVenue = new Venue({
-      placeName,
-      totalSlotsOfCar,
-      totalSlotsOfBike,
-      ownerId: decoded.id,
+    const venue = await prisma.venue.findUnique({
+      where: { name: name.trim() },
+      include: {
+        bookings: {
+          where: {
+            status: {
+              in: [BookingStatus.CONFIRMED, BookingStatus.PENDING]
+            }
+          },
+          select: {
+            vehicleType: true,
+            status: true
+          }
+        }
+      }
     });
 
-    await newVenue.save();
+    if (!venue) {      
+      const allVenues = await prisma.venue.findMany({
+        select: { name: true },
+        take: 10
+      });
 
-    return NextResponse.json(JSON.stringify({ message: "Venue created", venue: newVenue }), {
-      status: 201,
+      return NextResponse.json(
+        {
+          error: "Venue not found",
+          searchedFor: name,
+          availableVenues: allVenues.map(v => v.name),
+          suggestion: "Please check the venue name and try again"
+        },
+        { status: 404 }
+      );
+    }
+
+    const carBookings = venue.bookings.filter(b => b.vehicleType === "CAR").length;
+    const bikeBookings = venue.bookings.filter(b => b.vehicleType === "BIKE").length;
+
+    const availableCarSlots = venue.totalCarSlots - carBookings;
+    const availableBikeSlots = venue.totalBikeSlots - bikeBookings;
+    return NextResponse.json({
+      success: true,
+      venue: {
+        id: venue.id,
+        name: venue.name,
+        totalCarSlots: venue.totalCarSlots,
+        totalBikeSlots: venue.totalBikeSlots,
+        availableCarSlots: Math.max(0, availableCarSlots),
+        availableBikeSlots: Math.max(0, availableBikeSlots),
+        bookedCarSlots: carBookings,
+        bookedBikeSlots: bikeBookings,
+      }
     });
-  } catch (error) {
-    console.error("POST Venue Error:", error instanceof Error ? error.message : String(error));
-    return NextResponse.json(JSON.stringify({ message: "Internal server error" }), { status: 500 });
+  } catch (error: any) {
+    console.error("❌ Venue search error:", error);
+    return NextResponse.json(
+      { 
+        error: "Failed to search venue", 
+        details: error.message 
+      },
+      { status: 500 }
+    );
   }
 }
 
-export async function GET() {
+export async function POST(req: NextRequest) {
   try {
-    await connectDb();
-    const cookieStore = await cookies();
-    const token = cookieStore.get("ownerToken")?.value;
+    const body = await req.json();
+    const { search, limit = 10 } = body;
 
-    if (!token) {
-      return NextResponse.json(JSON.stringify({ message: "Unauthorized" }), { status: 401 });
-    }
-
-    const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY) as AuthTokenPayload;
-
-    const venues = await Venue.find({ ownerId: decoded.id });
-
-    return NextResponse.json(JSON.stringify({ venues }), {
-      status: 200,
+    const venues = await prisma.venue.findMany({
+      where: search ? {
+        name: {
+          contains: search,
+          mode: 'insensitive'
+        }
+      } : undefined,
+      select: {
+        id: true,
+        name: true,
+        totalCarSlots: true,
+        totalBikeSlots: true,
+      },
+      take: limit,
+      orderBy: {
+        name: 'asc'
+      }
     });
-  } catch (error) {
-    console.error("GET Venue Error:", error instanceof Error ? error.message : String(error));
-    return NextResponse.json(JSON.stringify({ message: "Internal server error" }), { status: 500 });
+
+    return NextResponse.json({
+      success: true,
+      venues,
+      count: venues.length
+    });
+  } catch (error: any) {
+    console.error("Venue search error:", error);
+    return NextResponse.json(
+      { error: "Failed to search venues", details: error.message },
+      { status: 500 }
+    );
   }
 }
