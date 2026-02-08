@@ -46,7 +46,6 @@ export const authOptions: NextAuthOptions = {
           throw new Error("Invalid credentials");
         }
 
-        // Check if user has the correct role
         if (role === "OWNER" && !user.isOwner) {
           throw new Error("This email is registered as USER, not OWNER");
         }
@@ -77,8 +76,30 @@ export const authOptions: NextAuthOptions = {
   },
 
   callbacks: {
+    async signIn({ user, account, profile }) {
+      if (account?.provider === "google") {
+        
+        try {
+          const existingUser = await prisma.user.findUnique({
+            where: { email: user.email! },
+            select: { id: true, isUser: true, isOwner: true, email: true },
+          });
+
+          if (existingUser) {            
+            return true;
+          }
+          return true;
+          
+        } catch (error) {
+          console.error("Error checking user:", error);
+          return false;
+        }
+      }
+
+      return true;
+    },
+
     async jwt({ token, user, account }) {
-      // Initial sign in
       if (user) {
         token.id = user.id;
         token.email = user.email || undefined;
@@ -86,7 +107,6 @@ export const authOptions: NextAuthOptions = {
         token.picture = user.image || undefined;
       }
 
-      // Always fetch fresh data from database
       if (token.email) {
         const dbUser = await prisma.user.findUnique({
           where: { email: token.email as string },
@@ -107,9 +127,8 @@ export const authOptions: NextAuthOptions = {
           token.picture = dbUser.image || undefined;
           token.isUser = dbUser.isUser;
           token.isOwner = dbUser.isOwner;
-
         } else {
-          console.error("❌ [JWT] User not found in DB, signing out");
+          console.error("User not found in DB");
           return {
             id: token.id,
             email: token.email,
@@ -133,11 +152,7 @@ export const authOptions: NextAuthOptions = {
       }
       return session;
     },
-
-    async signIn({ user, account }) {
-      return true;
-    },
   },
+
   secret: process.env.NEXTAUTH_SECRET,
-  debug: true,
 };
