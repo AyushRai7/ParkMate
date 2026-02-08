@@ -1,72 +1,62 @@
-# 🚗 ParkMate — Parking Reservation Platform
+# ParkMate — Smart Parking Reservation Platform
 
-ParkMate is a full-stack parking reservation platform that allows users to search and book parking slots in advance, while enabling parking owners to manage venues and availability.  
-The project solves a real-world urban problem, parking unavailability, and is built with production-grade authentication, payments, and booking workflows.
+ParkMate is a full-stack parking reservation platform that helps users easily find and book parking slots while allowing parking owners to manage venues and availability efficiently.
 
----
-
-## 🔗 Live Demo
-
-🌐 **Live Application:** [Demo Link](https://parkmate-ayush.vercel.app/)  
+Built with **production-grade authentication, role-based access control, and scalable backend architecture**, ParkMate solves the real-world problem of urban parking unavailability.
 
 ---
 
-## ✨ Key Features
+## Live Demo
 
-### 👤 Authentication & Authorization
-- Secure **JWT-based authentication**
+**Live Application:** https://parkmate-ayush.vercel.app/
+
+---
+
+## Key Features
+
+### Authentication & Authorization
+- **NextAuth.js** powered authentication
 - Role-based access control:
-  - **Users** → Book parking slots
-  - **Owners/Admins** → Manage venues & slots
+- Secure session handling with **JWT strategy**
 
 ---
 
-### 🚘 Parking Booking System
-- Search parking locations by name 
-- Real-time slot availability check
-- Prevents double booking
-
----
-
-### 💳 Payments & Invoicing
+### Payments & Invoicing
 - Integrated **Stripe Payment Gateway**
 - Secure checkout flow
-- **Automatic invoice generation** after successful payment
-- Stores payment and booking references for tracking
+- Automatic invoice generation after successful payment
+- Booking & payment reference tracking
 
 ---
 
-### 🏢 Owner/Admin Management
-- Add parking venues and slots post-registration
-- Update or delete parking listings
-- Control slot availability
+### User Interface & UX
+- Modern, responsive UI
+- Optimized for mobile and desktop
+- Smooth auth flow with role-aware redirects
 
 ---
 
-### 🎨 User Interface
-- Responsive and modern UI using **Next.js**
-- Clean design with **Tailwind CSS**
+## Tech Stack
+
+### Frontend
+- **Next.js**
+- **TypeScript**
+- **Tailwind CSS**
+- Shadcn
+
+### Backend
+- **Node.js**
+- **NextAuth.js** (Credentials + Google OAuth)
+- **Prisma ORM**
+- **PostgreSQL (Supabase)**
+- **Stripe API**
+
+### Deployment
+- **Vercel** 
 
 ---
 
-## 🛠️ Tech Stack
-
-**Frontend**
-- Next.js (TypeScript)
-- Tailwind CSS
-
-**Backend**
-- Node.js
-- MongoDB
-- JWT Authentication
-- Stripe API
-
-**Deployment**
-- Vercel
-
----
-
-## ⚙️ Project Setup (Local Development)
+## Project Setup 
 
 ```bash
 git clone https://github.com/AyushRai7/Parkmate.git
