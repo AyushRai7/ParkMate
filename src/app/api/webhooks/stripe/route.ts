@@ -3,9 +3,7 @@ import Stripe from "stripe";
 import { prisma } from "@/lib/prisma";
 import { BookingStatus, VehicleType } from "@prisma/client";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
-
-const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
+export const runtime = "nodejs";
 
 function getNextAvailableSlot(
   totalSlots: number,
@@ -19,44 +17,49 @@ function getNextAvailableSlot(
 }
 
 export async function POST(req: NextRequest) {
-  const signature = req.headers.get("stripe-signature");
-
-  if (!signature) {
-    return NextResponse.json({ error: "Missing signature" }, { status: 400 });
-  }
-
-  let event: Stripe.Event;
-
   try {
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
+
+    const signature = req.headers.get("stripe-signature");
+
+    if (!signature) {
+      return NextResponse.json(
+        { error: "Missing signature" },
+        { status: 400 }
+      );
+    }
+
     const body = await req.text();
 
-    event = stripe.webhooks.constructEvent(
+    const event = stripe.webhooks.constructEvent(
       body,
       signature,
       webhookSecret
     );
-  } catch (err: any) {
-    return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
-  }
 
-  if (event.type === "checkout.session.completed") {
-    const session = event.data.object as Stripe.Checkout.Session;
+    if (event.type === "checkout.session.completed") {
+      const session = event.data.object as Stripe.Checkout.Session;
+      const bookingId = session.metadata?.bookingId;
 
-    const bookingId = session.metadata?.bookingId;
+      if (!bookingId) {
+        return NextResponse.json(
+          { error: "Missing bookingId" },
+          { status: 400 }
+        );
+      }
 
-    if (!bookingId) {
-      return NextResponse.json({ error: "Missing bookingId" }, { status: 400 });
-    }
-
-    try {
       await confirmBookingAndAssignSlot(bookingId);
-    } catch (err) {
-      console.error("❌ Booking confirmation failed:", err);
-      return NextResponse.json({ received: false }, { status: 200 });
     }
-  }
 
-  return NextResponse.json({ received: true });
+    return NextResponse.json({ received: true });
+  } catch (err: any) {
+    console.error("❌ Stripe webhook error:", err);
+    return NextResponse.json(
+      { error: "Webhook handling failed" },
+      { status: 400 }
+    );
+  }
 }
 
 async function confirmBookingAndAssignSlot(bookingId: string) {
@@ -91,7 +94,7 @@ async function confirmBookingAndAssignSlot(bookingId: string) {
     });
 
     const bookedSlots = confirmedBookings
-      .map(b => b.slotNumber)
+      .map((b) => b.slotNumber)
       .filter((s): s is number => s !== null);
 
     const nextSlot = getNextAvailableSlot(totalSlots, bookedSlots);
