@@ -1,13 +1,24 @@
 import type { Metadata } from "next";
-import { Noto_Sans } from "next/font/google";
+import localFont from "next/font/local";
 import { Toaster } from "sonner";
 import { Providers } from "@/components/Providers";
 import "./globals.css";
 
-const notoSans = Noto_Sans({
-  weight: ["400", "700"],
-  subsets: ["latin"],
+const notoSans = localFont({
+  src: [
+    {
+      path: "../../public/fonts/NotoSans-Regular.ttf",
+      weight: "400",
+      style: "normal",
+    },
+    {
+      path: "../../public/fonts/NotoSans-Bold.ttf",
+      weight: "700",
+      style: "normal",
+    },
+  ],
   variable: "--font-noto-sans",
+  display: "swap",
 });
 
 export const metadata: Metadata = {
