@@ -40,7 +40,10 @@ function InvoiceContent() {
     null,
   );
   const [error, setError] = useState<string | null>(null);
-  const loadInvoiceData = useCallback(async () => {
+const MAX_RETRIES = 20; // 20 × 3s = 60 seconds max wait
+const retryCountRef = useRef(0);
+
+const loadInvoiceData = useCallback(async () => {
   if (!bookingId) return;
 
   try {
@@ -51,35 +54,13 @@ function InvoiceContent() {
       cache: "no-store",
     });
 
-    if (!res.ok) {
-      const errorData = await res.json();
-      throw new Error(errorData.error || "Failed to load invoice");
-    }
-
     const data = await res.json();
-    setBookingDetails(data);
 
-    if (data.status === "PENDING" || !data.slotNumber) {
-      setIsConfirming(true);
-      try {
-        const confirmRes = await fetch("/api/confirmation", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ bookingId }),
-        });
-
-        if (confirmRes.ok) {
-          const refreshRes = await fetch(`/api/booking/${bookingId}`, {
-            cache: "no-store",
-          });
-          if (refreshRes.ok) {
-            setBookingDetails(await refreshRes.json());
-          }
-        }
-      } finally {
-        setIsConfirming(false);
-      }
+    if (!res.ok) {
+      throw new Error(data?.error || "Failed to load invoice");
     }
+
+    setBookingDetails(data);
   } catch (error: any) {
     setError(error.message || "Failed to load invoice");
   } finally {
@@ -87,14 +68,34 @@ function InvoiceContent() {
   }
 }, [bookingId]);
 
-  useEffect(() => {
-  if (!bookingId) {
-    setError("Invalid booking ID");
+useEffect(() => {
+  if (!bookingId) return;
+  retryCountRef.current = 0;
+  loadInvoiceData();
+}, [bookingId, loadInvoiceData]);
+
+useEffect(() => {
+  if (!bookingDetails) return;
+
+  // Stop polling if confirmed or cancelled
+  if (bookingDetails.status !== "PENDING") return;
+
+  // Stop polling if we've hit the retry limit
+  if (retryCountRef.current >= MAX_RETRIES) {
+    setError(
+      "Payment confirmation is taking longer than expected. " +
+      "Please refresh the page or contact support if your slot isn't confirmed soon."
+    );
     return;
   }
 
-  loadInvoiceData();
-}, [bookingId, loadInvoiceData]);
+  const interval = setInterval(() => {
+    retryCountRef.current += 1;
+    loadInvoiceData();
+  }, 3000);
+
+  return () => clearInterval(interval);
+}, [bookingDetails, loadInvoiceData]);
 
   const handleDownload = async () => {
     if (!bookingDetails) {

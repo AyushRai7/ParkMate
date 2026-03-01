@@ -231,7 +231,7 @@ export async function GET(req: NextRequest) {
       count: bookings.length
     });
   } catch (error: any) {
-    console.error("❌ GET booking error:", error);
+    console.error("GET booking error:", error);
     return NextResponse.json(
       { error: "Failed to fetch data", details: error.message },
       { status: 500 }
