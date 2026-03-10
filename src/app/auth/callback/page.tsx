@@ -12,13 +12,8 @@ export default function AuthCallback() {
 
   useEffect(() => {
     const handleCallback = async () => {
-      if (hasProcessed) {
-        return;
-      }
-
-      if (status === "loading") {
-        return;
-      }
+      if (hasProcessed) return;
+      if (status === "loading") return;
 
       if (status === "unauthenticated") {
         router.push("/login");
@@ -26,70 +21,54 @@ export default function AuthCallback() {
       }
 
       if (session?.user) {
-        const pendingRole = localStorage.getItem("oauth-pending-role");
+        const pendingRole = localStorage.getItem("oauth-pending-role") as
+          | "USER"
+          | "OWNER"
+          | null;
 
-        const hasNoRole = !session.user.isUser && !session.user.isOwner;
-
-        if (hasNoRole && pendingRole) {          
+        // No pending role means user landed here without going through
+        // the Google button — just redirect based on existing role
+        if (!pendingRole) {
           setHasProcessed(true);
-          
-          try {
-            const response = await fetch("/api/auth/set-role", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ role: pendingRole }),
-            });
-
-            const data = await response.json();
-
-            if (!response.ok) {
-              throw new Error(data.error || "Failed to set role");
-            }
-            
-            localStorage.removeItem("oauth-pending-role");
-            
-            await new Promise(resolve => setTimeout(resolve, 2000));
-            
-            const targetPath = pendingRole === "OWNER" ? "/owner" : "/homepage";
-            
-            window.location.href = targetPath;
-            return;
-          } catch (error: any) {
-            console.error("❌ [Callback] Failed to set role:", error);
-            toast.error(error.message || "Failed to set role");
-            await signOut({ redirect: false });
-            localStorage.removeItem("oauth-pending-role");
-            setHasProcessed(false);
-            router.push("/login");
-            return;
-          }
-        }
-
-        if (!hasNoRole) {
-          const existingRole = session.user.isOwner ? "OWNER" : "USER";
-          
-          if (pendingRole && pendingRole !== existingRole) {
-            toast.error(`This email is registered as ${existingRole}. Please use the correct login option.`);
-            await signOut({ redirect: false });
-            localStorage.removeItem("oauth-pending-role");
-            setHasProcessed(false);
-            router.push(`/login?role=${pendingRole}&error=wrong-role`);
-            return;
-          }
-
-          localStorage.removeItem("oauth-pending-role");
-          setHasProcessed(true);
-          
-          const targetPath = session.user.isOwner ? "/owner" : "/homepage";
-          router.push(targetPath);
+          router.push(session.user.isOwner ? "/owner" : "/homepage");
           return;
         }
 
-        console.error("No role found and no pending role");
-        toast.error("Role assignment required. Please try again.");
-        await signOut({ redirect: false });
-        setHasProcessed(false);
-        router.push("/login");
+        // Always call set-role for the pending role.
+        // - New user: assigns the role for the first time
+        // - Returning user with same role: set-role is idempotent, no-op
+        // - Returning user with wrong role (different email registered as
+        //   different role): set-role returns 403, we handle it below
+        setHasProcessed(true);
+
+        try {
+          const response = await fetch("/api/auth/set-role", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ role: pendingRole }),
+          });
+
+          const data = await response.json();
+
+          if (!response.ok) {
+            // 403 means this email is already registered as a different role
+            throw new Error(data.error || "Failed to set role");
+          }
+
+          localStorage.removeItem("oauth-pending-role");
+
+          // Small delay to allow JWT to pick up the DB change on next refresh
+          await new Promise((resolve) => setTimeout(resolve, 1000));
+
+          window.location.href = pendingRole === "OWNER" ? "/owner" : "/homepage";
+        } catch (error: any) {
+          console.error("[Callback] Failed to set role:", error);
+          toast.error(error.message || "Failed to set role");
+          await signOut({ redirect: false });
+          localStorage.removeItem("oauth-pending-role");
+          setHasProcessed(false);
+          router.push("/login");
+        }
       }
     };
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { signIn } from "next-auth/react";
+import { signIn, signOut, getSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Role } from "./types";
 import { toast } from "sonner";
@@ -17,12 +17,20 @@ const Google = ({ role }: GoogleProps) => {
     setIsLoading(true);
 
     try {
+      // Store intended role before redirect — callback page reads this
       localStorage.setItem("oauth-pending-role", role);
+
+      // If already logged in (e.g. switching roles), sign out first.
+      // Without this, NextAuth keeps the old session cookie and throws
+      // OAuthAccountNotLinked when a different Google account tries to sign in.
+      const existingSession = await getSession();
+      if (existingSession) {
+        await signOut({ redirect: false });
+      }
 
       await signIn("google", {
         callbackUrl: "/auth/callback",
         redirect: true,
-        prompt: "select_account",
       });
     } catch (err: any) {
       console.error("Google login error:", err);
