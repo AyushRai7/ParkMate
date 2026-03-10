@@ -7,6 +7,7 @@ declare module "next-auth" {
       id: string;
       isUser: boolean;
       isOwner: boolean;
+      currentRole: string;
     } & DefaultSession["user"];
   }
 
@@ -17,6 +18,7 @@ declare module "next-auth" {
     image?: string | null;
     isUser: boolean;
     isOwner: boolean;
+    currentRole?: string;
   }
 }
 
@@ -28,5 +30,6 @@ declare module "next-auth/jwt" {
     picture?: string;
     isUser: boolean;
     isOwner: boolean;
+    currentRole: string;
   }
 }

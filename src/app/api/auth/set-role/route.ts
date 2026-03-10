@@ -8,19 +8,13 @@ export async function POST(request: NextRequest) {
     const session = await getServerSession(authOptions);
 
     if (!session || !session.user?.email) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const { role } = await request.json();
 
     if (role !== "USER" && role !== "OWNER") {
-      return NextResponse.json(
-        { error: "Invalid role" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Invalid role" }, { status: 400 });
     }
 
     const currentUser = await prisma.user.findUnique({
@@ -29,42 +23,30 @@ export async function POST(request: NextRequest) {
     });
 
     if (!currentUser) {
-      console.error("❌ [set-role] User not found in database");
-      return NextResponse.json(
-        { error: "User not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    const hasExistingRole = currentUser.isUser || currentUser.isOwner;
+    const alreadyHasRole =
+      (role === "USER" && currentUser.isUser) ||
+      (role === "OWNER" && currentUser.isOwner);
 
-    if (hasExistingRole) {
-      const existingRole = currentUser.isOwner ? "OWNER" : "USER";
-      
-      if (existingRole === role) {
-        return NextResponse.json({
-          success: true,
-          message: "Role already set",
-          user: {
-            email: currentUser.email,
-            isUser: currentUser.isUser,
-            isOwner: currentUser.isOwner,
-          },
-        });
-      }
-
-      console.error(`[set-role] Role switching denied: ${existingRole} → ${role}`);
-      return NextResponse.json(
-        { error: `This email is already registered as ${existingRole}` },
-        { status: 403 }
-      );
+    if (alreadyHasRole) {
+      return NextResponse.json({
+        success: true,
+        message: "Role already set",
+        user: {
+          email: currentUser.email,
+          isUser: currentUser.isUser,
+          isOwner: currentUser.isOwner,
+        },
+      });
     }
-    
+
     const updatedUser = await prisma.user.update({
       where: { email: session.user.email },
       data: {
-        isUser: role === "USER",  
-        isOwner: role === "OWNER",
+        isUser: role === "USER" ? true : currentUser.isUser,
+        isOwner: role === "OWNER" ? true : currentUser.isOwner,
       },
     });
 

@@ -40,62 +40,60 @@ function InvoiceContent() {
     null,
   );
   const [error, setError] = useState<string | null>(null);
-const MAX_RETRIES = 20; // 20 × 3s = 60 seconds max wait
-const retryCountRef = useRef(0);
+  const MAX_RETRIES = 20; 
+  const retryCountRef = useRef(0);
 
-const loadInvoiceData = useCallback(async () => {
-  if (!bookingId) return;
+  const loadInvoiceData = useCallback(async () => {
+    if (!bookingId) return;
 
-  try {
-    setIsLoading(true);
-    setError(null);
+    try {
+      setIsLoading(true);
+      setError(null);
 
-    const res = await fetch(`/api/booking/${bookingId}`, {
-      cache: "no-store",
-    });
+      const res = await fetch(`/api/booking/${bookingId}`, {
+        cache: "no-store",
+      });
 
-    const data = await res.json();
+      const data = await res.json();
 
-    if (!res.ok) {
-      throw new Error(data?.error || "Failed to load invoice");
+      if (!res.ok) {
+        throw new Error(data?.error || "Failed to load invoice");
+      }
+
+      setBookingDetails(data);
+    } catch (error: any) {
+      setError(error.message || "Failed to load invoice");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [bookingId]);
+
+  useEffect(() => {
+    if (!bookingId) return;
+    retryCountRef.current = 0;
+    loadInvoiceData();
+  }, [bookingId, loadInvoiceData]);
+
+  useEffect(() => {
+    if (!bookingDetails) return;
+
+    if (bookingDetails.status !== "PENDING") return;
+
+    if (retryCountRef.current >= MAX_RETRIES) {
+      setError(
+        "Payment confirmation is taking longer than expected. " +
+          "Please refresh the page or contact support if your slot isn't confirmed soon.",
+      );
+      return;
     }
 
-    setBookingDetails(data);
-  } catch (error: any) {
-    setError(error.message || "Failed to load invoice");
-  } finally {
-    setIsLoading(false);
-  }
-}, [bookingId]);
+    const interval = setInterval(() => {
+      retryCountRef.current += 1;
+      loadInvoiceData();
+    }, 3000);
 
-useEffect(() => {
-  if (!bookingId) return;
-  retryCountRef.current = 0;
-  loadInvoiceData();
-}, [bookingId, loadInvoiceData]);
-
-useEffect(() => {
-  if (!bookingDetails) return;
-
-  // Stop polling if confirmed or cancelled
-  if (bookingDetails.status !== "PENDING") return;
-
-  // Stop polling if we've hit the retry limit
-  if (retryCountRef.current >= MAX_RETRIES) {
-    setError(
-      "Payment confirmation is taking longer than expected. " +
-      "Please refresh the page or contact support if your slot isn't confirmed soon."
-    );
-    return;
-  }
-
-  const interval = setInterval(() => {
-    retryCountRef.current += 1;
-    loadInvoiceData();
-  }, 3000);
-
-  return () => clearInterval(interval);
-}, [bookingDetails, loadInvoiceData]);
+    return () => clearInterval(interval);
+  }, [bookingDetails, loadInvoiceData]);
 
   const handleDownload = async () => {
     if (!bookingDetails) {
@@ -211,9 +209,7 @@ useEffect(() => {
 
       const fileName = `ParkMate_Invoice_${bookingDetails.slotLabel}_${new Date().toISOString().split("T")[0]}.pdf`;
       pdf.save(fileName);
-
-    } catch (error) {
-    }
+    } catch (error) {}
   };
 
   const isSlotAssigned =
