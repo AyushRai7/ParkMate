@@ -26,19 +26,12 @@ export default function AuthCallback() {
           | "OWNER"
           | null;
 
-        // No pending role means user landed here without going through
-        // the Google button — just redirect based on existing role
         if (!pendingRole) {
           setHasProcessed(true);
           router.push(session.user.isOwner ? "/owner" : "/homepage");
           return;
         }
 
-        // Always call set-role for the pending role.
-        // - New user: assigns the role for the first time
-        // - Returning user with same role: set-role is idempotent, no-op
-        // - Returning user with wrong role (different email registered as
-        //   different role): set-role returns 403, we handle it below
         setHasProcessed(true);
 
         try {
@@ -51,13 +44,11 @@ export default function AuthCallback() {
           const data = await response.json();
 
           if (!response.ok) {
-            // 403 means this email is already registered as a different role
             throw new Error(data.error || "Failed to set role");
           }
 
           localStorage.removeItem("oauth-pending-role");
 
-          // Small delay to allow JWT to pick up the DB change on next refresh
           await new Promise((resolve) => setTimeout(resolve, 1000));
 
           window.location.href = pendingRole === "OWNER" ? "/owner" : "/homepage";

@@ -8,7 +8,7 @@ interface FilterDropdownProps {
   isOpen: boolean;
   onToggle: () => void;
   vehicleTypeFilter: "all" | "car" | "bike";
-  onVehicleTypeChange: (type: "all" | "car" | "bike") => void;
+  onVehicleTypeChange: (type: "all" |"car" | "bike") => void;
   venueFilters: string[];
   selectedVenues: string[];
   onVenueToggle: (venue: string) => void;
@@ -60,13 +60,12 @@ export default function FilterDropdown({
                 </h4>
                 <div className="flex gap-2">
                   {[
-                    { value: "all", label: "All", icon: null },
                     { value: "car", label: "Car", icon: Car },
                     { value: "bike", label: "Bike", icon: Bike },
                   ].map((option) => (
                     <button
                       key={option.value}
-                      onClick={() => onVehicleTypeChange(option.value as "all" | "car" | "bike")}
+                      onClick={() => onVehicleTypeChange(option.value as "car" | "bike")}
                       className={cn(
                         "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all",
                         vehicleTypeFilter === option.value

@@ -6,7 +6,6 @@ import { useSession } from "next-auth/react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 
-
 import Navbar from "@/components/owner/Navbar";
 import Footer from "@/components/homepage/Footer";
 import OwnerHeader from "@/components/owner/Header";
@@ -55,8 +54,9 @@ export default function OwnerPage() {
   const [usernameQuery, setUsernameQuery] = useState("");
   const [vehicleQuery, setVehicleQuery] = useState("");
   const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const [vehicleTypeFilter, setVehicleTypeFilter] =
-    useState<"all" | "CAR" | "BIKE">("all");
+  const [vehicleTypeFilter, setVehicleTypeFilter] = useState<
+    "all" | "CAR" | "BIKE"
+  >("all");
   const [selectedVenues, setSelectedVenues] = useState<string[]>([]);
 
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -64,43 +64,41 @@ export default function OwnerPage() {
   const [dataLoading, setDataLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-
   const fetchOwnerData = useCallback(async () => {
-  try {
-    setDataLoading(true);
-    setError(null);
+    try {
+      setDataLoading(true);
+      setError(null);
 
-    const response = await fetch("/api/owner", {
-      credentials: "include",
-    });
+      const response = await fetch("/api/owner", {
+        credentials: "include",
+      });
 
-    if (!response.ok) {
-      if (response.status === 401 || response.status === 403) {
-        toast.error("Session expired. Please sign in again.");
-        router.push("/login?role=OWNER");
-        return;
+      if (!response.ok) {
+        if (response.status === 401 || response.status === 403) {
+          toast.error("Session expired. Please sign in again.");
+          router.push("/login?role=OWNER");
+          return;
+        }
+        throw new Error("Unable to load dashboard data");
       }
-      throw new Error("Unable to load dashboard data");
+
+      const data = await response.json();
+
+      if (!data.success) {
+        throw new Error(data.error || "Failed to load dashboard");
+      }
+
+      setBookings(data.bookings || []);
+      setVenues(data.venues || []);
+
+      toast.success("Dashboard updated");
+    } catch (err: any) {
+      setError(err.message);
+      toast.error(err.message || "Failed to load owner dashboard");
+    } finally {
+      setDataLoading(false);
     }
-
-    const data = await response.json();
-
-    if (!data.success) {
-      throw new Error(data.error || "Failed to load dashboard");
-    }
-
-    setBookings(data.bookings || []);
-    setVenues(data.venues || []);
-
-    toast.success("Dashboard updated");
-  } catch (err: any) {
-    setError(err.message);
-    toast.error(err.message || "Failed to load owner dashboard");
-  } finally {
-    setDataLoading(false);
-  }
-}, [router]);
-
+  }, [router]);
 
   /* ---------------- AUTH CHECK ---------------- */
 
@@ -124,10 +122,10 @@ export default function OwnerPage() {
 
   /* ---------------- DERIVED DATA ---------------- */
 
-  const allVenues = useMemo(() => venues.map(v => v.name), [venues]);
+  const allVenues = useMemo(() => venues.map((v) => v.name), [venues]);
 
   const filteredBookings = useMemo(() => {
-    return bookings.filter(b => {
+    return bookings.filter((b) => {
       const matchesUsername = b.userName
         .toLowerCase()
         .includes(usernameQuery.toLowerCase());
@@ -140,15 +138,9 @@ export default function OwnerPage() {
         vehicleTypeFilter === "all" || b.vehicleType === vehicleTypeFilter;
 
       const matchesVenue =
-        selectedVenues.length === 0 ||
-        selectedVenues.includes(b.venue.name);
+        selectedVenues.length === 0 || selectedVenues.includes(b.venue.name);
 
-      return (
-        matchesUsername &&
-        matchesVehicle &&
-        matchesType &&
-        matchesVenue
-      );
+      return matchesUsername && matchesVehicle && matchesType && matchesVenue;
     });
   }, [
     bookings,
@@ -161,29 +153,27 @@ export default function OwnerPage() {
   /* ---------------- ACTIONS ---------------- */
 
   const handleDelete = async (id: string) => {
-  try {
-    const res = await fetch(`/api/owner?bookingId=${id}`, {
-      method: "DELETE",
-    });
-    const data = await res.json();
+    try {
+      const res = await fetch(`/api/owner?bookingId=${id}`, {
+        method: "DELETE",
+      });
+      const data = await res.json();
 
-    if (!res.ok) {
-      throw new Error(data.error || "Failed to delete booking");
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to delete booking");
+      }
+
+      toast.success("Booking deleted");
+      fetchOwnerData();
+    } catch (err: any) {
+      toast.error(err.message || "Could not delete booking");
     }
-
-    toast.success("Booking deleted");
-    fetchOwnerData();
-  } catch (err: any) {
-    toast.error(err.message || "Could not delete booking");
-  }
-};
-
+  };
 
   const handleVenueAdded = () => {
-  toast.success("Venue added successfully");
-  fetchOwnerData();
-};
-
+    toast.success("Venue added successfully");
+    fetchOwnerData();
+  };
 
   if (status === "loading" || dataLoading) {
     return (
@@ -200,22 +190,20 @@ export default function OwnerPage() {
   if (!session?.user?.isOwner) return null;
 
   if (error) {
-  return (
-    <div className="flex min-h-screen items-center justify-center">
-      <button
-        onClick={() => {
-          toast.message("Retrying…");
-          fetchOwnerData();
-        }}
-        className="px-4 py-2 bg-primary text-primary-foreground rounded"
-      >
-        Try Again
-      </button>
-    </div>
-  );
-}
-
-
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <button
+          onClick={() => {
+            toast.message("Retrying…");
+            fetchOwnerData();
+          }}
+          className="px-4 py-2 bg-primary text-primary-foreground rounded"
+        >
+          Try Again
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -233,7 +221,7 @@ export default function OwnerPage() {
           />
 
           <BookingsTable
-            bookings={filteredBookings.map(b => ({
+            bookings={filteredBookings.map((b) => ({
               id: b.id,
               user: b.userName || b.user.name || "Unknown",
               venue: b.venue.name,
@@ -249,16 +237,16 @@ export default function OwnerPage() {
             vehicleTypeFilter={
               vehicleTypeFilter.toLowerCase() as "all" | "car" | "bike"
             }
-            onVehicleTypeChange={t =>
-              setVehicleTypeFilter(t.toUpperCase() as any)
+            onVehicleTypeChange={(t) =>
+              setVehicleTypeFilter(
+                t === "all" ? "all" : (t.toUpperCase() as "CAR" | "BIKE"),
+              )
             }
             venueFilters={allVenues}
             selectedVenues={selectedVenues}
-            onVenueToggle={v =>
-              setSelectedVenues(prev =>
-                prev.includes(v)
-                  ? prev.filter(x => x !== v)
-                  : [...prev, v]
+            onVenueToggle={(v) =>
+              setSelectedVenues((prev) =>
+                prev.includes(v) ? prev.filter((x) => x !== v) : [...prev, v],
               )
             }
             onClearFilters={() => {

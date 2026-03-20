@@ -40,7 +40,7 @@ function InvoiceContent() {
     null,
   );
   const [error, setError] = useState<string | null>(null);
-  const MAX_RETRIES = 20; 
+  const MAX_RETRIES = 20;
   const retryCountRef = useRef(0);
 
   const loadInvoiceData = useCallback(async () => {
@@ -208,7 +208,24 @@ function InvoiceContent() {
       });
 
       const fileName = `ParkMate_Invoice_${bookingDetails.slotLabel}_${new Date().toISOString().split("T")[0]}.pdf`;
-      pdf.save(fileName);
+
+      const pdfBase64 = pdf.output("datauristring").split(",")[1];
+
+      // Send to server to upload to S3
+      const res = await fetch("/api/invoice/upload", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          bookingId: bookingDetails.id,
+          pdfBase64,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.error);
+
+      window.open(data.url, "_blank");
     } catch (error) {}
   };
 

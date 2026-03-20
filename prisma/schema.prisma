@@ -81,6 +81,7 @@ model Booking {
   vehicleNumber String
   slotNumber    Int?
   status        BookingStatus @default(PENDING)
+  invoiceKey    String?
   expiresAt     DateTime
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
