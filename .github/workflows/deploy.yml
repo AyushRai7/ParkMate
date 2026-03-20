@@ -1,0 +1,45 @@
+name: Deploy ParkMate
+
+on:
+  push:
+    branches:
+      - main  
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ayushrai750/parkmate:latest
+
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            sudo docker pull ayushrai750/parkmate:latest
+            sudo docker stop parkmate || true
+            sudo docker rm parkmate || true
+            sudo docker run -d \
+              --name parkmate \
+              -p 127.0.0.1:3000:3000 \
+              --env-file ~/.env.parkmate \
+              --restart unless-stopped \
+              ayushrai750/parkmate:latest
+            sudo docker system prune -f

@@ -12,6 +12,7 @@ import InvoiceDetails from "@/components/invoice/InvoiceDetails";
 import InvoiceFooter from "@/components/invoice/InvoiceFooter";
 import DownloadInvoiceButton from "@/components/invoice/DownloadButton";
 import LoadingState from "@/components/invoice/LoadingState";
+import { toast } from "sonner";
 
 interface BookingDetails {
   id: string;
@@ -207,11 +208,8 @@ function InvoiceContent() {
         align: "center",
       });
 
-      const fileName = `ParkMate_Invoice_${bookingDetails.slotLabel}_${new Date().toISOString().split("T")[0]}.pdf`;
-
       const pdfBase64 = pdf.output("datauristring").split(",")[1];
 
-      // Send to server to upload to S3
       const res = await fetch("/api/invoice/upload", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -226,7 +224,10 @@ function InvoiceContent() {
       if (!res.ok) throw new Error(data.error);
 
       window.open(data.url, "_blank");
-    } catch (error) {}
+    } catch (error: any) {
+      console.error("Invoice upload error:", error);
+      toast.error(error.message || "Failed to upload invoice");
+    }
   };
 
   const isSlotAssigned =
